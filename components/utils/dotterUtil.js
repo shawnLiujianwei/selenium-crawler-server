@@ -33,16 +33,19 @@ exports.freePort = function (port) {
 
 function _findPID(port) {
     return new Promise(function (resolve, reject) {
-        Process.exec("lsof -t -i:7010", function (err, data) {
+        Process.exec("lsof -t -i:"+port, function (err, data) {
             if (err) {
+                //logger.error(err);
                 resolve();
             } else {
+
                 var str = data.toString().split("\n");
                 str = str.filter(function (item) {
                     return item;
                 }).map(function (item) {
                     return parseInt(item)
                 })
+                logger.info("Find process '%s' listen port '%s'",str,port);
                 resolve(str);
             }
 
@@ -65,8 +68,24 @@ function _killProcess(pid, port) {
     });
 }
 
-exports.pintPort = function (port) {
+exports.pingPort = function (port) {
     return new Promise(function (resolve, reject) {
         var comand = "ping http://127.0.0.1:" + port;
     })
+}
+
+/**
+ * break an array into multiple chunks of a certain size.
+ * return array of arrays
+ *
+ * todo move to language extensions
+ */
+exports.chunk = function (array, chunkSize) {
+    var out = [];
+    var offset = 0;
+    while (offset < array.length) {
+        out.push(array.slice(offset, Math.min(array.length, offset + chunkSize)));
+        offset += chunkSize;
+    }
+    return out;
 }

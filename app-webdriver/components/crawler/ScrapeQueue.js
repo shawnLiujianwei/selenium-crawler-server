@@ -3,7 +3,7 @@
  */
 var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/ScrapeQueue.js");
-var retailerScript = require("./retailers");
+var RetailerScript = require("./retailers");
 function ScrapeQueue(crawlerInstance, options) {
     this.crawlerInstance = crawlerInstance;
     this.options = options || {
@@ -26,14 +26,22 @@ ScrapeQueue.prototype.push = function (job) {
         }, function next(callback) {
             var job = jobQueue.jobs.shift();
             job.attempt = job.attempt || 1;
-            var batch = job.batchRequest || batch1;
+            var batch = job.batchRequest;
             delete job.batchRequest;
-            retailerScript.getSelector(job.productURL, job.locale, job.retailer)
+            var retailerScript = new RetailerScript(job.productURL, job.locale, job.retailer);
+            logger.info("job queue '%s' - scraping '%s' for batch request '%s'",jobQueue.id,job.productURL,batch.id);
+            retailerScript.getSelector()
                 .then(function (selectorConfig) {
                     return jobQueue.crawlerInstance.request(job, selectorConfig)//TODO need add parameters here
                         .then(function (result) {
-                            batch.appendResults();//TODO need add results to batchRequest here
-                        }).catch(function (err) {
+                            //batch.appendResults();//TODO need add results to batchRequest here
+                            logger.info("job queue '%s' - scraped successfully '%s' for batch request '%s'",jobQueue.id,job.productURL,batch.id);
+                            return retailerScript.format(result);
+                        })
+                        .then(function (jsonResult) {
+                            batch.appendResults(jsonResult);
+                        })
+                        .catch(function (err) {
                             logger.error("Failed to process ", job, " with ", err.message);
                             if (job.attempt++ <= q.options.maxRetries) {
                                 jobQueue.jobs.unshift(job);
@@ -55,7 +63,7 @@ ScrapeQueue.prototype.push = function (job) {
                 });
         }, function done() {
             jobQueue.processing = false;
-            logger.info('Scrape queue ' + jobQueue.id + ' is now empty');
+            logger.info("job queue '%s' is now empty",jobQueue.id);
         });
     }
 }

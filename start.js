@@ -16,7 +16,7 @@ process.env.NODE_CONFIG_DIR = path.join(__dirname, "./config");
 var driverInstance = require("./app-driverInstance/startup");
 _setupCrawlerServer()
     .then(function () {
-        return _startServer();
+        //return _startServer();
     })
     .catch(function (err) {
         logger.error(err);
@@ -25,19 +25,6 @@ _setupCrawlerServer()
 
 
 function _setupCrawlerServer() {
-    //var hubPort = listenerConfig.seleniumHub;
-    //return seleniumServer.createHub(hubPort)
-    //    .then(function () {
-    //        return Promise.map(listenerConfig.seleniumServer, function (port) {
-    //            return seleniumServer.registerSeleniumNode(hubPort, port);
-    //        })
-    //    })
-    //    .then(function () {
-    //        return Promise.map(phantomInstances, function (port) {
-    //            return phantomInstance.registerPhantomNode(hubPort, port)
-    //        });
-    //    })
-    //return driverInstance.setupCrawlerServer();
     return new Promise(function (resolve, reject) {
         var command = [];
         command.push("pm2 start");

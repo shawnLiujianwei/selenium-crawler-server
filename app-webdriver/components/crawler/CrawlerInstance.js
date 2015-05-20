@@ -3,7 +3,12 @@
  */
 var ScrapeQueue = require("./ScrapeQueue");
 var Promise = require("bluebird");
+var webdriver = require('selenium-webdriver'),
+    By = require('selenium-webdriver').By,
+    until = require('selenium-webdriver').until;
+var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/CrawlerInstance.js");
+var fs = require("fs");
 function CrawlerInstance(serverURL) {
     this.server = serverURL;
     this.id = serverURL;
@@ -14,10 +19,11 @@ function CrawlerInstance(serverURL) {
 }
 
 CrawlerInstance.prototype.request = function (job, selectorConfig) {
-    return _scrape(job.productURL, selectorConfig.selectors, job.browser).bind(this);
+
+    return _scrape(job.productURL, selectorConfig.selectors, job.browser,this)
 }
 
-function _scrape(productURL, selectors, browser) {
+function _scrape(productURL, selectors, browser,ph) {
     var jsonResult = {
         "status": true,
         "errors": [],
@@ -31,7 +37,7 @@ function _scrape(productURL, selectors, browser) {
             if (_checkValidBrowser(browser)) {
                 var driver = new webdriver.Builder()
                     .forBrowser(browser)
-                    .usingServer(this.server)
+                    .usingServer(ph.server)
                     .build();
                 driver.get(productURL);
 

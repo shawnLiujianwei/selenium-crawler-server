@@ -7,7 +7,6 @@ var webdriver = require('selenium-webdriver'),
     until = require('selenium-webdriver').until;
 var Promise = require("bluebird");
 var logger = require("node-config-logger").getLogger("components/crawler/executor.js");
-var retailerService = require("./retailer");
 var async = require("async");
 var useSeleniumServer = true;
 var path = require("path");

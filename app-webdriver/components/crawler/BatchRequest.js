@@ -13,7 +13,8 @@ function BatchRequest(options) {
     //    //el.cacheValidity = (options && options.cacheValidity) || 0
     //}.bind(this));
     this.locale = options.locale;
-    this.retailer = options.site;
+    this.retailer = options.retailer;
+    this.browser = options.browser;
     this.processing = false;
     this.response = {
         status: true,
@@ -65,8 +66,14 @@ function _resolve(br) {
     });
 }
 
-BatchRequest.prototype.appendResults = function (results) {
-
+BatchRequest.prototype.appendResults = function (result) {
+    //logger.info("result have been added to batchRequest",results);
+    this.response.results.push(result);
+    if (this.response.results.length === this.pages.length) {
+        this.resolve(this.response);
+    } else {
+        logger.info("batch request " + this.id + " got " + this.response.results.length + " out of " + this.pages.length + " results expected");
+    }
 }
 
 

@@ -4,6 +4,6 @@
 var express = require('express');
 var controller = require('./scrape.controller.js');
 var router = express.Router();
-router.get("/price", controller.scrape);
+router.post("/price", controller.scrape);
 router.get("/test", controller.test);
 module.exports = router;

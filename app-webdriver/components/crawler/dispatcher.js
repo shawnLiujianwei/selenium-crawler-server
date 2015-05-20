@@ -46,6 +46,6 @@ exports.initAllInstance = function () {
         seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub"));
     })
     listenerConfig.phantomCluster.forEach(function (port) {
-        phantomInstances.push(new CrawlerInstance(host + ":" + host));
+        phantomInstances.push(new CrawlerInstance(host + ":" + port));
     })
 }

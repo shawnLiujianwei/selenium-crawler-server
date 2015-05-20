@@ -7,7 +7,8 @@ var Error = require("../../components/errors");
 var productService = require("../../components/db/product");
 var logger = require("node-config-logger").getLogger("app-webdriver/app/scrape/scrape.controller.js");
 var Promise = require("bluebird");
-var crawler = require("../../components/crawler/executor");
+var dispatcher = require("../../components/crawler/dispatcher");
+var dotterUtil = require("../../../components/utils/dotterUtil");
 //var body = {
 //    "productURLs": [],//required
 //    "locale": "",//required,
@@ -18,7 +19,13 @@ var crawler = require("../../components/crawler/executor");
 exports.scrape = function (req, res) {
     var body = req.body;
     if (body && body.productURLs && body.locale) {
-
+        dispatcher.scrape("price", body.productURLs, body.locale)
+            .then(function (re) {
+                res.json(re);
+            })
+            .catch(function (err) {
+                Error[500](req, res, err.message);
+            })
     } else {
         Error[400](req, res, "both productURL")
     }
@@ -43,12 +50,20 @@ function _runTest() {
                     Array.prototype.push.apply(array, array);
                     Array.prototype.push.apply(array, array);
                     Array.prototype.push.apply(array, array);
-                    logger.warn("Totally got '%s' products", array.length);
-                    return Promise.map(array, function (url) {
-                        return crawler.priceSpider(url, "en_gb", null, 7010, "phantomjs")
+                    var chunks = dotterUtil.chunk(array,5);
+                    Promise.map(chunks,function(items){
+                        return dispatcher.scrape("price",items,"en_gb")
                     })
+                        .then(function(list){
+                            logger.info("Done test");
+                        })
+                        .catch(function(err){
+                            logger.error(err);
+                        })
+
                 })
 
 
         })
 }
+

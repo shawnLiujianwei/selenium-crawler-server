@@ -237,15 +237,16 @@ function RetailerObject(productURL, locale, retailer) {
 }
 
 RetailerObject.prototype.getSelector = function () {
-    return _extractInfo(this.productURL, this.locale, this.retailer)
+    var ro = this;
+    return _extractInfo(ro.productURL, ro.locale, ro.retailer)
         .then(function (result) {
-            var localeConfig = _.find(retailerSelectors, {"locale": this.locale});
+            var localeConfig = _.find(retailerSelectors, {"locale": ro.locale});
             if (!localeConfig) {
                 //reject("unknown locale '%s'", locale);
                 return Promise.reject({
                     status: false,
                     url: this.productURL,
-                    message: "unknown locale '" + this.locale + "'"
+                    message: "unknown locale '" + ro.locale + "'"
                 })
             } else {
                 var retailer = _.find(localeConfig.retailers, {"id": result.selectorId});
@@ -268,8 +269,18 @@ RetailerObject.prototype.getSelector = function () {
 RetailerObject.prototype.format = function (jsonObject) {
     return _extractInfo(this.productURL, this.locale, this.retailer)
         .then(function (result) {
-            
+            if (result && result.retailerFile) {
+                return require(result.retailerFile).format(jsonObject);
+            } else {
+                return _basicFormat(jsonObject);
+            }
         })
+}
+
+function _basicFormat(jsonObject) {
+    return new Promise(function(resolve,reject){
+        resolve(jsonObject);
+    })
 }
 
 module.exports = RetailerObject;
