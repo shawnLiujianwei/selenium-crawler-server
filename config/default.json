@@ -1,0 +1,36 @@
+{
+  "mongo": {
+    "db": "web_crawler",
+    "host": "127.0.0.1",
+    "port": 27017
+  },
+  "nodeLog": {
+    "configuration": {
+      "appenders": [
+        {
+          "type": "console"
+        }
+      ],
+      "levels": {
+        "[all]": "debug"
+      },
+      "replaceConsole": true
+    }
+  },
+  "listener": {
+    "port": 7001,
+    "seleniumHub": 4444,
+    "phantomCluster": [
+      7010,
+      7011
+    ],
+    "seleniumServer": [
+      7020
+    ]
+  },
+  "app": {
+    "name": "selenium-crawler",
+    "script": "server.js",
+    "mode": "fork"
+  }
+}

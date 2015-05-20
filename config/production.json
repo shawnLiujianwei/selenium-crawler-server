@@ -1,0 +1,57 @@
+{
+  "mongo": {
+    "db": "web_crawler",
+    "host": "data-eu.dotter.me",
+    "port": 3282
+  },
+  "nodeLog": {
+    "configuration": {
+      "appenders": [
+        {
+          "type": "console"
+        },
+        {
+          "type": "dateFile",
+          "filename": "/home/ubuntu/logs/nts-crawler-output.log",
+          "pattern": "-yyyy-MM-dd",
+          "alwaysIncludePattern": true,
+          "backups": 10
+        },
+        {
+          "type": "logLevelFilter",
+          "level": "WARN",
+          "appender": {
+            "type": "dateFile",
+            "filename": "/home/ubuntu/logs/nts-crawler-error.log",
+            "pattern": "-yyyy-MM-dd",
+            "alwaysIncludePattern": true,
+            "backups": 10,
+            "level": "debug"
+          }
+        }
+      ],
+      "levels": {
+        "[all]": "info"
+      },
+      "replaceConsole": true
+    }
+  },
+  "listener": {
+    "port": 7001,
+    "seleniumHub": 4444,
+    "phantomCluster": [
+      7010,
+      7011,
+      7012,
+      7013
+    ],
+    "seleniumServer": [
+    ]
+  },
+  "app": {
+    "name": "selenium-crawler",
+    "script": "server.js",
+    "mode": "cluster",
+    "instances": 2
+  }
+}
