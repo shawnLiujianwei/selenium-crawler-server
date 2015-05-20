@@ -43,9 +43,9 @@ exports.scrape = function (crawlerType, urls, locale, retailer, browser) {
 exports.initAllInstance = function () {
     var host = "http://127.0.0.1";
     listenerConfig.seleniumServer.forEach(function (port) {
-        seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub"));
+        seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub", "selenium"));
     })
     listenerConfig.phantomCluster.forEach(function (port) {
-        phantomInstances.push(new CrawlerInstance(host + ":" + port));
+        phantomInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs"));
     })
 }

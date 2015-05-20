@@ -3,13 +3,35 @@
  */
 
 'use strict';
-var router = express.Router();
-var crawler = require("./crawler");
+//var express = require("express");
+//var router = express.Router();
+var phantom = require("./phantom");
+var selenium = require("./selenium");
+var listenerConfig = require("config").listener.driverInstanceApp;
+var logger = require("node-config-logger").getLogger("app-driverInstance/routes.js");
 module.exports = function (app) {
     //app.use("/scrape", require("./app/scrape/index"));
     ////app.use("/api/log", require("./app/log"));
-    //router.get("/driver/restart/type/:type/port/:port", function (req, res) {
-    //
-    //});
-    crawler.setupCrawlerServer();
+    app.get("/driver/restart/phantomjs/:port", function (req, res) {
+        var port = req.params.port;
+        phantom.registerPhantomNode(listenerConfig.seleniumHub, parseInt(port))
+            .then(function () {
+                logger.info("refresh phantom instance on port '%s'", port);
+                res.json("restart phantom instance on port " + port);
+            })
+            .catch(function (err) {
+                logger.error(err);
+            })
+    });
+    app.get("/driver/restart/selenium/:port", function (req, res) {
+        var port = req.params.port;
+        selenium.registerSeleniumNode(listenerConfig.seleniumHub, parseInt(port))
+            .then(function () {
+                logger.info("refresh selenium instance on port '%s'", port);
+                res.json("restart selenium instance on port " + port);
+            })
+            .catch(function (err) {
+                logger.error(err);
+            })
+    });
 };

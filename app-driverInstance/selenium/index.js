@@ -44,7 +44,7 @@ exports.createHub = function (port) {
                                 logger.debug("Selenium HUB :" + data.toString());
                             });
                             process.stderr.on('data', function (data) {
-                                logger.debug("Selenium HUB :" + data.toString());
+                                logger.warn("Selenium HUB :" + data.toString());
                             });
                             resolve(port);
                         }
@@ -99,6 +99,9 @@ exports.registerSeleniumNode = function (hubPort, nodePort) {
 
 }
 
+function _extractPort(str) {
+    //Selenium HUB :21:11:44.277 WARN - Failed to check status of node: Connect to 127.0.0.1:7011 [/127.0.0.1] failed: Connection refused
+}
 
 function _getChromedriverPath() {
     return chromedriverPath;

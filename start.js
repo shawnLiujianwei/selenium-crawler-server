@@ -13,7 +13,7 @@ var os = require("os");
 var path = require("path");
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 process.env.NODE_CONFIG_DIR = path.join(__dirname, "./config");
-var driverInstance = require("./app-driverInstance/startup");
+//var driverInstance = require("./app-driverInstance/startup");
 _setupCrawlerServer()
     .then(function () {
         //return _startServer();
@@ -28,7 +28,7 @@ function _setupCrawlerServer() {
     return new Promise(function (resolve, reject) {
         var command = [];
         command.push("pm2 start");
-        command.push("app-driverInstance/startup.js");
+        command.push("app-driverInstance/server.js");
         command.push("--name=phantomCluster");
         var cp = Process.exec(command.join(" "), function (err, data) {
             if (err) {

@@ -9,21 +9,31 @@ var webdriver = require('selenium-webdriver'),
 var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/CrawlerInstance.js");
 var fs = require("fs");
-function CrawlerInstance(serverURL) {
+var rp = require("request-promise");
+function CrawlerInstance(serverURL, type) {
     this.server = serverURL;
+    this.port = serverURL.replace("http://127.0.0.1:", "");
     this.id = serverURL;
     this.queue = new ScrapeQueue(this, {
         id: this.server,
         maxRetries: 3
     });
+    this.type = type;
+    this.timeout = 30000;
+
 }
 
 CrawlerInstance.prototype.request = function (job, selectorConfig) {
 
-    return _scrape(job.productURL, selectorConfig.selectors, job.browser,this)
+    return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
 
-function _scrape(productURL, selectors, browser,ph) {
+var listenerConfig = require("config").listener.driverInstanceApp;
+CrawlerInstance.prototype.restart = function () {
+    return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/" + this.type + "/" + this.port);
+}
+
+function _scrape(productURL, selectors, browser, ph) {
     var jsonResult = {
         "status": true,
         "errors": [],
@@ -33,6 +43,26 @@ function _scrape(productURL, selectors, browser,ph) {
         if (!browser) {
             browser = "phantomjs";
         }
+
+        var instanceTimeout = setTimeout(function () {
+            //if (br.promise && br.promise.isPending()) {
+            //    logger.error("batch request " + br.id + " timed out");
+            //    br.abort("batch timeout exceeded");
+            //}
+            ph.restart()
+                .catch(function(err){
+                    logger.error(err);
+                })
+                .finally(function () {
+                    resolve({
+                        "status": false,
+                        "message": "server '" + ph.id + "' timeout"
+                    })
+                })
+
+
+        }, ph.timeout);
+
         try {
             if (_checkValidBrowser(browser)) {
                 var driver = new webdriver.Builder()
@@ -78,6 +108,7 @@ function _scrape(productURL, selectors, browser,ph) {
                                 jsonResult.stock = "in-stock";
                                 delete jsonResult.errors;
                             }
+                            clearTimeout(instanceTimeout);
                             resolve(jsonResult);
                         })
                 })
@@ -87,6 +118,7 @@ function _scrape(productURL, selectors, browser,ph) {
                 jsonResult.errors.push({
                     "message": "Invalid browser '" + browser + "'"
                 })
+                clearTimeout(instanceTimeout);
                 resolve(jsonResult);
             }
         } catch (err) {
@@ -94,6 +126,7 @@ function _scrape(productURL, selectors, browser,ph) {
             jsonResult.errors.push({
                 "message": err.message || err
             })
+            clearTimeout(instanceTimeout);
             resolve(jsonResult);
         }
     })

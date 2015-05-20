@@ -25,4 +25,4 @@ exports.setupCrawlerServer = function () {
         })
 }
 
-exports.setupCrawlerServer();
+//exports.setupCrawlerServer();
