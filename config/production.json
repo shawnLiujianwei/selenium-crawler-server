@@ -37,20 +37,23 @@
     }
   },
   "listener": {
-    "port": 7001,
-    "seleniumHub": 4444,
-    "phantomCluster": [
-      7010,
-      7011,
-      7012,
-      7013
-    ],
-    "seleniumServer": [
-    ]
+    "webdriverApp": {
+      "port": 7001
+    },
+    "driverInstanceApp": {
+      "seleniumHub": 4444,
+      "phantomCluster": [
+        7010,
+        7011
+      ],
+      "seleniumServer": [
+        7020
+      ]
+    }
   },
   "app": {
-    "name": "selenium-crawler",
-    "script": "server.js",
+    "name": "selenium-webserver",
+    "script": "app-webdriver/startup.js",
     "mode": "cluster",
     "instances": 2
   }

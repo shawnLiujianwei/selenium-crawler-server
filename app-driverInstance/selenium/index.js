@@ -5,9 +5,9 @@ var Promise = require("bluebird");
 var path = require("path");
 var logger = require("node-config-logger").getLogger("components/selenium-server/index.js");
 var seleniumStandalone = require("selenium-standalone");
-var dotterUtil = require("../utils/dotterUtil");
+var dotterUtil = require("../../components/utils/dotterUtil");
 var Process = require("child_process");
-var delay = require("../utils/delayPromise");
+var delay = require("../../components/utils/delayPromise");
 var seleniumJar = path.join(__dirname, "../../node_modules/selenium-standalone/.selenium/selenium-server/2.45.0-server.jar");
 var chromedriverPath = path.join(__dirname, "../../node_modules/selenium-standalone/.selenium/chromedriver/2.15-x64-chromedriver");
 exports.createHub = function (port) {
@@ -24,8 +24,8 @@ exports.createHub = function (port) {
                 args.push("java")
                 args.push("-jar");
                 args.push(seleniumJar);
-                args.push("-Dwebdriver.chrome.driver=" + _getChromedriverPaht());
-                //args.push(_getChromedriverPaht());
+                args.push("-Dwebdriver.chrome.driver=" + _getChromedriverPath());
+                //args.push(_getChromedriverPath());
                 args.push("-role hub -port " + port);
                 args.push("-newSessionWaitTimeout 5000")
                 args.push("-browserTimeout 10000");
@@ -69,8 +69,8 @@ exports.registerSeleniumNode = function (hubPort, nodePort) {
             args.push("java")
             args.push("-jar");
             args.push(seleniumJar);
-            args.push("-Dwebdriver.chrome.driver=" + _getChromedriverPaht());
-            //args.push(_getChromedriverPaht());
+            args.push("-Dwebdriver.chrome.driver=" + _getChromedriverPath());
+            //args.push(_getChromedriverPath());
             args.push("-role node -hub http://127.0.0.1:" + hubPort);
             args.push("-port " + nodePort);
             return new Promise(function (resolve, reject) {
@@ -100,7 +100,7 @@ exports.registerSeleniumNode = function (hubPort, nodePort) {
 }
 
 
-function _getChromedriverPaht() {
+function _getChromedriverPath() {
     return chromedriverPath;
     var platform = require("os").platform();
     var filename = "";

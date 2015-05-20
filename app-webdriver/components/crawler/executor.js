@@ -73,67 +73,7 @@ function _scrape(productURL, selectors, port, browser) {
 
 function _scrape1(productURL, driver, selectors) {
     return new Promise(function (resolve, reject) {
-        driver.get(productURL);
-        var tmp = {
-            "status": true,
-            "errors": [],
-            "productURL": productURL
-        };
 
-        logger.info("scraping ", productURL);
-        async.until(function isDone() {
-            return selectors.length === 0;
-        }, function next(callback) {
-            var selector = selectors.shift();
-            var byC = "";
-            if (selector.selectorType === "css") {
-                byC = By.css(selector.content);
-            } else {
-                byC = By.xpath(selector.content);
-            }
-            var element = driver.findElement(byC);
-            element.getText()
-                .then(function (content) {
-                    tmp[selector.field] = content;
-                    callback()
-                }, function onError(err) {
-                    //logger.error(err.message);
-                    tmp.status = false;
-                    tmp.errors.push({
-                        "selector": selector.field,
-                        "message": err.message
-                    });
-                    callback();
-                })
-        }, function done() {
-
-            _memoryUsage(process.id)
-                .then(function (u) {
-                    console.log("++++++++++" + u.memory);
-                    return driver.quit()
-                        .then(function () {
-                            tmp.updateDate = new Date();
-                            if (tmp.oos) {
-                                tmp.status = true;
-                                tmp.stock = "out-of-stock";
-                                delete tmp.errors;
-                            } else if (_onlyOOSError(tmp.errors)) {
-                                tmp.status = true;
-                                tmp.stock = "in-stock";
-                                delete tmp.errors;
-                            } else {
-
-                            }
-                            return _memoryUsage(process.id)
-                                .then(function (us) {
-                                    console.log("++++++++++" + us.memory);
-                                    resolve(tmp);
-                                })
-                        })
-                })
-
-
-        });
     })
 }
 

@@ -5,6 +5,8 @@ var Promise = require("bluebird");
 var Process = require("child_process");
 var logger = require("node-config-logger").getLogger("./components/utils/dotterUtil.js");
 var os = require("os");
+
+exports.findPID = _findPID;
 exports.freePort = function (port) {
     return new Promise(function (resolve, reject) {
         logger.info("freeing up port " + port + " if still in use");

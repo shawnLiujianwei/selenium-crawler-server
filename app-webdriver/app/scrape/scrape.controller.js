@@ -2,14 +2,26 @@
  * Created by Shawn Liu on 2015/5/18.
  */
 
-var crawler = require("../../components/crawler");
+//var crawler = require("../../components/crawler");
 var Error = require("../../components/errors");
 var productService = require("../../components/db/product");
-var logger = require("node-config-logger").getLogger("app/scrape/scrape.controller.js");
+var logger = require("node-config-logger").getLogger("app-webdriver/app/scrape/scrape.controller.js");
 var Promise = require("bluebird");
+var crawler = require("../../components/crawler/executor");
+//var body = {
+//    "productURLs": [],//required
+//    "locale": "",//required,
+//    "retailer": "tesco.com",//optional
+//    ##"expiration": 0//default is 0, use the cache 0 hour ago,
+//    "browser":"phantomjs"// default is phantomjs , can choose chrome
+//}
 exports.scrape = function (req, res) {
     var body = req.body;
+    if (body && body.productURLs && body.locale) {
 
+    } else {
+        Error[400](req, res, "both productURL")
+    }
 }
 
 exports.test = function (req, res) {
@@ -33,7 +45,7 @@ function _runTest() {
                     Array.prototype.push.apply(array, array);
                     logger.warn("Totally got '%s' products", array.length);
                     return Promise.map(array, function (url) {
-                        return crawler.priceSpider(url, "en_gb", null, "phantomjs")
+                        return crawler.priceSpider(url, "en_gb", null, 7010, "phantomjs")
                     })
                 })
 
