@@ -16,7 +16,7 @@ module.exports = function (app) {
         var port = req.params.port;
         phantom.registerPhantomNode(listenerConfig.seleniumHub, parseInt(port))
             .then(function () {
-                logger.info("refresh phantom instance on port '%s'", port);
+                logger.warn("refresh phantom instance on port '%s'", port);
                 res.json("restart phantom instance on port " + port);
             })
             .catch(function (err) {
@@ -27,7 +27,7 @@ module.exports = function (app) {
         var port = req.params.port;
         selenium.registerSeleniumNode(listenerConfig.seleniumHub, parseInt(port))
             .then(function () {
-                logger.info("refresh selenium instance on port '%s'", port);
+                logger.warn("refresh selenium instance on port '%s'", port);
                 res.json("restart selenium instance on port " + port);
             })
             .catch(function (err) {
