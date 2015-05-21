@@ -47,3 +47,8 @@ exports.registerPhantomNode = function (hubPort, nodePort) {
             })
         })
 }
+
+
+process.on("uncaughtException", function (err) {
+    logger.error("UncaughtException:", err);
+});

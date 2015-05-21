@@ -137,3 +137,7 @@ function _getChromedriverPath() {
     }
     return path.join(__dirname, "../../lib/chromedriver/" + filename);
 }
+
+process.on("uncaughtException", function (err) {
+    logger.error("UncaughtException:", err);
+});

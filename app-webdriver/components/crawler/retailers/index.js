@@ -3,7 +3,7 @@
  */
 
 var Promise = require("bluebird");
-var logger = require("node-config-logger").getLogger("components/crawler/retailer.js");
+var logger = require("node-config-logger").getLogger("components/crawler/retailers/index.js");
 var _ = require("lodash");
 var urlParser = require("url");
 var retailerSelectors = require("./retailer_selectors");

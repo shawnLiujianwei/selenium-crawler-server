@@ -15,7 +15,7 @@
     "webdriver"
   ],
   "scripts": {
-    "install": "node components/selenium/install.js"
+    "install": "node app-driverInstance/selenium/install.js"
   },
   "dependencies": {
     "async": "^0.9.0",

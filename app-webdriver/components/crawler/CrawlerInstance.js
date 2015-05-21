@@ -36,7 +36,8 @@ CrawlerInstance.prototype.request = function (job, retailerSelectorConfig) {
 
 var listenerConfig = require("config").listener.driverInstanceApp;
 CrawlerInstance.prototype.restart = function () {
-    return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/restart/" + this.type + "/" + this.port);
+    // return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/restart/" + this.type + "/" + this.port);
+    return Promise.resolve();
 }
 
 function _scrapeLinks() {
@@ -111,10 +112,11 @@ function _scrapeDetails(productURL, selectors, browser, ph) {
                     logger.error("Restart phantom instance:", err);
                 })
                 .finally(function () {
-                    resolve({
-                        "status": false,
+
+                    jsonResult.errors.push({
                         "message": "server '" + ph.id + "' timeout"
                     })
+                    resolve(jsonResult)
                 })
 
 
@@ -178,5 +180,9 @@ function writeScreenshot(data, name) {
     var screenshotPath = path.join(__dirname, "");
     fs.writeFileSync(screenshotPath + name, data, 'base64');
 };
+
+process.on("uncaughtException", function (err) {
+    logger.error("UncaughtException:", err);
+});
 
 module.exports = CrawlerInstance;

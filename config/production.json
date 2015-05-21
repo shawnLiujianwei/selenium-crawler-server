@@ -42,7 +42,7 @@
     },
     "driverInstanceApp": {
       "port": 7002,
-      "seleniumHub": 4444,
+      "seleniumHub": 4141,
       "phantomCluster": [
         7010,
         7011,
