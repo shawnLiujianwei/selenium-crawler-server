@@ -11,9 +11,9 @@ var logger = require("node-config-logger").getLogger("app-webdriver/components/c
 var fs = require("fs");
 var rp = require("request-promise");
 var _ = require("lodash");
-function CrawlerInstance(serverURL, type) {
+function CrawlerInstance(serverURL, type, port) {
     this.server = serverURL;
-    this.port = serverURL.replace("http://127.0.0.1:", "");
+    this.port = port;
     this.id = serverURL;
     this.queue = new ScrapeQueue(this, {
         id: this.server,
@@ -24,12 +24,12 @@ function CrawlerInstance(serverURL, type) {
 
 }
 
-CrawlerInstance.prototype.request = function (job, selectorConfig) {
+CrawlerInstance.prototype.request = function (job, retailerSelectorConfig) {
 
     if (job.method === "details") {
-        return _scrapeDetails(job.productURL, selectorConfig.selectors, job.browser, this);
+        return _scrapeDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
     } else if (job.method === "links") {
-        return _scrapeDetails(job.productURL, selectorConfig.selectors, job.browser, this);
+        return _scrapeDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
     }
     //return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
@@ -46,21 +46,21 @@ function _scrapeLinks() {
 /**
  * assume each element has multiply css or xpath selector
  * @param driver
- * @param selectorConfig
+ * @param selectorDetails
  * @param jsonResult
  * @returns {*}
  * @private
  */
-function _extractDataBySelector(driver, selectorConfig, jsonResult, productURL) {
+function _extractDataBySelector(driver, selectorDetails, jsonResult, productURL) {
     return new Promise(function (resolve, reject) {
-        var selectors = _.cloneDeep(selectorConfig.content);
-        jsonResult[selectorConfig.field] = null;
+        var selectors = _.cloneDeep(selectorDetails.content);
+        jsonResult[selectorDetails.field] = null;
         async.until(function isDone() {
-            return selectors.length === 0 || jsonResult[selectorConfig.field];
+            return selectors.length === 0 || jsonResult[selectorDetails.field];
         }, function next(callback) {
             var selector = selectors.shift();
             var byC = "";
-            if (selectorConfig.selectorType === "css") {
+            if (selectorDetails.selectorType === "css") {
                 byC = By.css(selector);
             } else {
                 byC = By.xpath(selector);
@@ -68,7 +68,7 @@ function _extractDataBySelector(driver, selectorConfig, jsonResult, productURL) 
             var element = driver.findElement(byC);
             element.getText()
                 .then(function (content) {
-                    jsonResult[selectorConfig.field] = content;
+                    jsonResult[selectorDetails.field] = content;
                     callback()
                 }, function onError(err) {
                     var error = {
@@ -81,7 +81,7 @@ function _extractDataBySelector(driver, selectorConfig, jsonResult, productURL) 
                     delete error.productURL;
                     if (selectors.length === 0) {
                         jsonResult.status = false;
-                        error.selector = selectorConfig;
+                        error.selector = selectorDetails;
                         jsonResult.errors.push(error);
                     }
                     callback();
@@ -97,6 +97,7 @@ function _scrapeDetails(productURL, selectors, browser, ph) {
         "status": true,
         "productURL": productURL,
         "errors": [],
+        "browser": browser,
         "selectors": _.cloneDeep(selectors)
     };
     return new Promise(function (resolve, reject) {

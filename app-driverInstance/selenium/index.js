@@ -49,7 +49,13 @@ exports.createHub = function (port) {
                                 }
                             });
                             process.stderr.on('data', function (data) {
-                                logger.error("Selenium HUB :" + data.toString());
+                                //logger.error("Selenium HUB :" + data.toString());
+                                var str = "Selenium HUB :" + data.toString();
+                                if (data.indexOf("[ERROR") !== -1) {
+                                    logger.error(str);
+                                } else {
+                                    logger.debug(str);
+                                }
                             });
                             resolve(port);
                         }
@@ -92,13 +98,18 @@ exports.registerSeleniumNode = function (hubPort, nodePort) {
                             process.stdout.on('data', function (data) {
                                 //logger.debug("Selenium Node stdout:" + data.toString());
                                 if (data.indexOf("[ERROR") !== -1) {
-                                    logger.error("Selenium Node Stdout '%s' :", nodePort, data.toString());
+                                    logger.error("Selenium Node  '%s' :", nodePort, data.toString());
                                 } else {
-                                    logger.debug("Selenium Node Stdout '%s' :", nodePort, data.toString());
+                                    logger.debug("Selenium Node  '%s' :", nodePort, data.toString());
                                 }
                             });
                             process.stderr.on('data', function (data) {
-                                logger.error("Selenium Node stderr:" + data.toString());
+                                var str = "Selenium Node '" + nodePort + ":" + data.toString()
+                                if (data.indexOf("[ERROR") !== -1) {
+                                    logger.error(str);
+                                } else {
+                                    logger.debug(str);
+                                }
                             });
                             resolve();
                         }
