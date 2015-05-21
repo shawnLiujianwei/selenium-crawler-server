@@ -112,7 +112,7 @@ function _scrapeDetails(productURL, selectors, browser, ph) {
                     logger.error("Restart phantom instance:", err);
                 })
                 .finally(function () {
-
+                    jsonResult.status = false;
                     jsonResult.errors.push({
                         "message": "server '" + ph.id + "' timeout"
                     })
