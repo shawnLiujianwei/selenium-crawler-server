@@ -269,7 +269,7 @@ RetailerObject.prototype.getSelector = function () {
 RetailerObject.prototype.format = function (jsonObject) {
     return _extractInfo(this.productURL, this.locale, this.retailer)
         .then(function (result) {
-            if (result && result.retailerFile) {
+            if (1 === 2 && result && result.retailerFile) {
                 return require(result.retailerFile).format(jsonObject);
             } else {
                 return _basicFormat(jsonObject);
@@ -277,10 +277,52 @@ RetailerObject.prototype.format = function (jsonObject) {
         })
 }
 
-function _basicFormat(jsonObject) {
-    return new Promise(function(resolve,reject){
-        resolve(jsonObject);
+function _basicFormat(jsonResult) {
+    return new Promise(function (resolve, reject) {
+        jsonResult.updateDate = new Date();
+        var errors = jsonResult.errors;
+        var selectors = jsonResult.selectors;
+        if (jsonResult.stock) {
+            jsonResult.status = true;
+            var stockInfo = jsonResult.stock.toLowerCase();
+            var oosKeys = [
+                "not available",//groceries.tesco.com,
+                "out of stock",//very.co.uk
+                "unavailable"
+            ];
+            var inStockKeys = [
+                "in stock"
+            ]
+            if (_checkStock(oosKeys, stockInfo)) {
+                jsonResult.stock = "out-of-stock";
+            } else if (_checkStock(inStockKeys, stockInfo)) {
+                jsonResult.stock = "in-stock";
+            } else {
+                jsonResult.stock = "in-stock";
+            }
+            // delete jsonResult.errors;
+        } else if (_onlyOOSError(jsonResult.errors)) {
+            jsonResult.status = true;
+            jsonResult.stock = "in-stock";
+            delete jsonResult.errors;
+        } else {
+            jsonResult.unhandledStatus = true;
+        }
+        delete jsonResult.selectors;
+        resolve(jsonResult);
     })
 }
+
+function _checkStock(array, str) {
+    return array.some(function (stockInfo) {
+        return str.indexOf(stockInfo) !== -1;
+    })
+}
+
+function _onlyOOSError(errors) {
+    logger.error(errors)
+    return !errors ? true : (errors.length === 1 && errors[0].selector && errors[0].selector.field === "oos")
+}
+
 
 module.exports = RetailerObject;

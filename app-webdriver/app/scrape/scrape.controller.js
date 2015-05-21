@@ -19,7 +19,7 @@ var dotterUtil = require("../../../components/utils/dotterUtil");
 exports.scrape = function (req, res) {
     var body = req.body;
     if (body && body.productURLs && body.locale) {
-        dispatcher.scrape("price", body.productURLs, body.locale)
+        dispatcher.scrape("details", body.productURLs, body.locale)
             .then(function (re) {
                 res.json(re);
             })
@@ -52,7 +52,7 @@ function _runTest() {
                     Array.prototype.push.apply(array, array);
                     var chunks = dotterUtil.chunk(array,5);
                     Promise.map(chunks,function(items){
-                        return dispatcher.scrape("price",items,"en_gb")
+                        return dispatcher.scrape("details",items,"en_gb")
                     })
                         .then(function(list){
                             logger.info("Done test");

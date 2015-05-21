@@ -46,5 +46,8 @@
   },
   "bugs": {
     "url": "https://github.com/dotterme/dotter-node-retailer-scripts/issues"
+  },
+  "devDependencies": {
+    "chai": "^2.3.0"
   }
 }

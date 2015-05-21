@@ -43,7 +43,8 @@ ScrapeQueue.prototype.push = function (job) {
                             //batch.appendResults(jsonResult);
                             return scrapeCache.insert(jsonResult)
                                 .then(function () {
-                                    return jsonResult;
+                                    batch.appendResults(jsonResult);
+                                    //return jsonResult;
                                 })
                         })
                         .catch(function (err) {

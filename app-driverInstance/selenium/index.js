@@ -41,10 +41,15 @@ exports.createHub = function (port) {
                         if (!isRejected) {
                             logger.info("Start selenium Hub on port '%s'", port);
                             process.stdout.on('data', function (data) {
-                                logger.debug("Selenium HUB :" + data.toString());
+                                //logger.debug("Selenium HUB :" + data.toString());
+                                if (data.indexOf("[ERROR") !== -1) {
+                                    logger.error("Selenium HUB Stdout '%s' :", nodePort, data.toString());
+                                } else {
+                                    logger.debug("Selenium HUB Stdout '%s' :", nodePort, data.toString());
+                                }
                             });
                             process.stderr.on('data', function (data) {
-                                logger.warn("Selenium HUB :" + data.toString());
+                                logger.error("Selenium HUB :" + data.toString());
                             });
                             resolve(port);
                         }
@@ -85,10 +90,15 @@ exports.registerSeleniumNode = function (hubPort, nodePort) {
                         if (!isRejected) {
                             logger.info("Register selenium-standalone node '%s' to selenium hub '%s'", nodePort, hubPort);
                             process.stdout.on('data', function (data) {
-                                logger.debug("Selenium Node stdout:" + data.toString());
+                                //logger.debug("Selenium Node stdout:" + data.toString());
+                                if (data.indexOf("[ERROR") !== -1) {
+                                    logger.error("Selenium Node Stdout '%s' :", nodePort, data.toString());
+                                } else {
+                                    logger.debug("Selenium Node Stdout '%s' :", nodePort, data.toString());
+                                }
                             });
                             process.stderr.on('data', function (data) {
-                                logger.debug("Selenium Node stderr:" + data.toString());
+                                logger.error("Selenium Node stderr:" + data.toString());
                             });
                             resolve();
                         }

@@ -10,6 +10,7 @@ var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/CrawlerInstance.js");
 var fs = require("fs");
 var rp = require("request-promise");
+var _ = require("lodash");
 function CrawlerInstance(serverURL, type) {
     this.server = serverURL;
     this.port = serverURL.replace("http://127.0.0.1:", "");
@@ -19,25 +20,84 @@ function CrawlerInstance(serverURL, type) {
         maxRetries: 3
     });
     this.type = type;
-    this.timeout = 30000;
+    this.timeout = 60000;
 
 }
 
 CrawlerInstance.prototype.request = function (job, selectorConfig) {
 
-    return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
+    if (job.method === "details") {
+        return _scrapeDetails(job.productURL, selectorConfig.selectors, job.browser, this);
+    } else if (job.method === "links") {
+        return _scrapeDetails(job.productURL, selectorConfig.selectors, job.browser, this);
+    }
+    //return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
 
 var listenerConfig = require("config").listener.driverInstanceApp;
 CrawlerInstance.prototype.restart = function () {
-    return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/" + this.type + "/" + this.port);
+    return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/restart/" + this.type + "/" + this.port);
 }
 
-function _scrape(productURL, selectors, browser, ph) {
+function _scrapeLinks() {
+
+}
+
+/**
+ * assume each element has multiply css or xpath selector
+ * @param driver
+ * @param selectorConfig
+ * @param jsonResult
+ * @returns {*}
+ * @private
+ */
+function _extractDataBySelector(driver, selectorConfig, jsonResult, productURL) {
+    return new Promise(function (resolve, reject) {
+        var selectors = _.cloneDeep(selectorConfig.content);
+        jsonResult[selectorConfig.field] = null;
+        async.until(function isDone() {
+            return selectors.length === 0 || jsonResult[selectorConfig.field];
+        }, function next(callback) {
+            var selector = selectors.shift();
+            var byC = "";
+            if (selectorConfig.selectorType === "css") {
+                byC = By.css(selector);
+            } else {
+                byC = By.xpath(selector);
+            }
+            var element = driver.findElement(byC);
+            element.getText()
+                .then(function (content) {
+                    jsonResult[selectorConfig.field] = content;
+                    callback()
+                }, function onError(err) {
+                    var error = {
+                        "productURL": productURL,
+                        "message": err.state,
+                        "code": err.code,
+                        "selector": selector
+                    };
+                    logger.error(error);
+                    delete error.productURL;
+                    if (selectors.length === 0) {
+                        jsonResult.status = false;
+                        error.selector = selectorConfig;
+                        jsonResult.errors.push(error);
+                    }
+                    callback();
+                })
+        }, function done() {
+            resolve(jsonResult);
+        })
+    });
+}
+
+function _scrapeDetails(productURL, selectors, browser, ph) {
     var jsonResult = {
         "status": true,
+        "productURL": productURL,
         "errors": [],
-        "productURL": productURL
+        "selectors": _.cloneDeep(selectors)
     };
     return new Promise(function (resolve, reject) {
         if (!browser) {
@@ -45,13 +105,9 @@ function _scrape(productURL, selectors, browser, ph) {
         }
 
         var instanceTimeout = setTimeout(function () {
-            //if (br.promise && br.promise.isPending()) {
-            //    logger.error("batch request " + br.id + " timed out");
-            //    br.abort("batch timeout exceeded");
-            //}
             ph.restart()
-                .catch(function(err){
-                    logger.error(err);
+                .catch(function (err) {
+                    logger.error("Restart phantom instance:", err);
                 })
                 .finally(function () {
                     resolve({
@@ -62,9 +118,8 @@ function _scrape(productURL, selectors, browser, ph) {
 
 
         }, ph.timeout);
-
         try {
-            if (_checkValidBrowser(browser)) {
+            if (_isValidBrowser(browser)) {
                 var driver = new webdriver.Builder()
                     .forBrowser(browser)
                     .usingServer(ph.server)
@@ -75,44 +130,23 @@ function _scrape(productURL, selectors, browser, ph) {
                     return selectors.length === 0;
                 }, function next(callback) {
                     var selector = selectors.shift();
-                    var byC = "";
-                    if (selector.selectorType === "css") {
-                        byC = By.css(selector.content);
-                    } else {
-                        byC = By.xpath(selector.content);
-                    }
-                    var element = driver.findElement(byC);
-                    element.getText()
-                        .then(function (content) {
-                            jsonResult[selector.field] = content;
-                            callback()
-                        }, function onError(err) {
-                            //logger.error(err.message);
-                            jsonResult.status = false;
-                            jsonResult.errors.push({
-                                "selector": selector.field,
-                                "message": err.message
-                            });
+                    _extractDataBySelector(driver, selector, jsonResult, productURL)
+                        .then(function (result) {
+                            jsonResult = result;
+                        })
+                        .catch(function (err) {
+                            logger.error(err)
+                        })
+                        .finally(function () {
                             callback();
                         })
                 }, function done() {
                     driver.quit()
                         .then(function () {
-                            jsonResult.updateDate = new Date();
-                            if (jsonResult.oos) {
-                                jsonResult.status = true;
-                                jsonResult.stock = "out-of-stock";
-                                delete jsonResult.errors;
-                            } else if (_onlyOOSError(jsonResult.errors)) {
-                                jsonResult.status = true;
-                                jsonResult.stock = "in-stock";
-                                delete jsonResult.errors;
-                            }
                             clearTimeout(instanceTimeout);
                             resolve(jsonResult);
                         })
                 })
-
             } else {
                 logger.error("Invalid browser '%s'", browser);
                 jsonResult.errors.push({
@@ -122,6 +156,7 @@ function _scrape(productURL, selectors, browser, ph) {
                 resolve(jsonResult);
             }
         } catch (err) {
+            logger.error("catch error");
             logger.error(err);
             jsonResult.errors.push({
                 "message": err.message || err
@@ -132,11 +167,8 @@ function _scrape(productURL, selectors, browser, ph) {
     })
 }
 
-function _onlyOOSError(errors) {
-    return !errors ? true : (errors.length === 1 && errors[0].selector === "oos")
-}
 
-function _checkValidBrowser(browser) {
+function _isValidBrowser(browser) {
     return true;
 }
 
