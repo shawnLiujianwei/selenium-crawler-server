@@ -20,7 +20,7 @@ function CrawlerInstance(serverURL, type) {
         maxRetries: 3
     });
     this.type = type;
-    this.timeout = 60000;
+    this.timeout = 30000;
 
 }
 
