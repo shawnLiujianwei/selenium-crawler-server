@@ -8,16 +8,17 @@ var BatchRequest = require("./BatchRequest");
 var phantomInstances = [];
 var seleniumInstances = [];
 var CrawlerInstance = require("./CrawlerInstance");
-var lastPhantomPick = 0;
-var lastSeleniumPick = 0;
+var lastPick = 0;
+var crawlerInstances = [];
 exports.getAvailableInstance = function (browser) {
-    if (browser === "phantomjs") {
-        var instance = phantomInstances[lastPhantomPick++ % phantomInstances.length];
-        return Promise.resolve(instance);
-    } else {
-        var instance = seleniumInstances[lastSeleniumPick++ % seleniumInstances.length];
-        return Promise.resolve(instance);
-    }
+    return Promise.resolve(crawlerInstances[lastPick++ % crawlerInstances.length])
+    //if (browser === "phantomjs") {
+    //    var instance = phantomInstances[lastPhantomPick++ % phantomInstances.length];
+    //    return Promise.resolve(instance);
+    //} else {
+    //    var instance = seleniumInstances[lastSeleniumPick++ % seleniumInstances.length];
+    //    return Promise.resolve(instance);
+    //}
 }
 
 exports.scrape = function (crawlerType, urls, locale, retailer, browser) {
@@ -41,11 +42,23 @@ exports.scrape = function (crawlerType, urls, locale, retailer, browser) {
 }
 
 exports.initAllInstance = function () {
-    var host = "http://127.0.0.1";
+    var server = "http://127.0.0.1:" + listenerConfig.seleniumHub + "/wd/hub";
+    //crawlerInstances.push(new CrawlerInstance(
+    //    server,"seleniumHub",
+    //))
+
     listenerConfig.seleniumServer.forEach(function (port) {
-        seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub", "selenium", port));
+        crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "selenium", listenerConfig.seleniumHub));
     })
     listenerConfig.phantomCluster.forEach(function (port) {
-        phantomInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port));
+        crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.seleniumHub));
     })
+
+    //var host = "http://127.0.0.1";
+    //listenerConfig.seleniumServer.forEach(function (port) {
+    //    seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub", "selenium", port));
+    //})
+    //listenerConfig.phantomCluster.forEach(function (port) {
+    //    phantomInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port));
+    //})
 }

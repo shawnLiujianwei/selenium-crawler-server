@@ -306,7 +306,7 @@ function _basicFormat(jsonResult) {
             jsonResult.stock = "in-stock";
             delete jsonResult.errors;
         } else {
-            jsonResult.unhandledStatus = true;
+            jsonResult.unFormatted = true;
         }
         delete jsonResult.selectors;
         resolve(jsonResult);

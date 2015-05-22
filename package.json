@@ -38,7 +38,8 @@
     "request-promise": "^0.4.2",
     "selenium-standalone": "^4.4.0",
     "selenium-webdriver": "^2.44.0",
-    "util-extend": "^1.0.1"
+    "util-extend": "^1.0.1",
+    "webdriverio": "^2.4.5"
   },
   "repository": {
     "type": "git",

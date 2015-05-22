@@ -3,14 +3,13 @@
  */
 var ScrapeQueue = require("./ScrapeQueue");
 var Promise = require("bluebird");
-var webdriver = require('selenium-webdriver'),
-    By = require('selenium-webdriver').By,
-    until = require('selenium-webdriver').until;
 var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/CrawlerInstance.js");
 var fs = require("fs");
 var rp = require("request-promise");
 var _ = require("lodash");
+var webdriverIO = require('webdriverio');
+var listenerConfig = require("config").listener.driverInstanceApp;
 function CrawlerInstance(serverURL, type, port) {
     this.server = serverURL;
     this.port = port;
@@ -27,147 +26,207 @@ function CrawlerInstance(serverURL, type, port) {
 CrawlerInstance.prototype.request = function (job, retailerSelectorConfig) {
 
     if (job.method === "details") {
-        return _scrapeDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
+        return extractDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
     } else if (job.method === "links") {
-        return _scrapeDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
+        return extractDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
     }
     //return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
 
-var listenerConfig = require("config").listener.driverInstanceApp;
+
 CrawlerInstance.prototype.restart = function () {
     // return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/restart/" + this.type + "/" + this.port);
     return Promise.resolve();
 }
 
-function _scrapeLinks() {
+function extractDetails(productURL, selectorArray, browser, crawlerInstance) {
+    var client = webdriverIO
+        .remote({
+            desiredCapabilities: {
+                browserName: browser
+            },
+            port: crawlerInstance.port
+        });
 
-}
-
-/**
- * assume each element has multiply css or xpath selector
- * @param driver
- * @param selectorDetails
- * @param jsonResult
- * @returns {*}
- * @private
- */
-function _extractDataBySelector(driver, selectorDetails, jsonResult, productURL) {
-    return new Promise(function (resolve, reject) {
-        var selectors = _.cloneDeep(selectorDetails.content);
-        jsonResult[selectorDetails.field] = null;
-        async.until(function isDone() {
-            return selectors.length === 0 || jsonResult[selectorDetails.field];
-        }, function next(callback) {
-            var selector = selectors.shift();
-            var byC = "";
-            if (selectorDetails.selectorType === "css") {
-                byC = By.css(selector);
-            } else {
-                byC = By.xpath(selector);
-            }
-            var element = driver.findElement(byC);
-            element.getText()
-                .then(function (content) {
-                    jsonResult[selectorDetails.field] = content;
-                    callback()
-                }, function onError(err) {
-                    var error = {
-                        "productURL": productURL,
-                        "message": err.state,
-                        "code": err.code,
-                        "selector": selector
-                    };
-                    logger.error(error);
-                    delete error.productURL;
-                    if (selectors.length === 0) {
-                        jsonResult.status = false;
-                        error.selector = selectorDetails;
-                        jsonResult.errors.push(error);
-                    }
-                    callback();
-                })
-        }, function done() {
-            resolve(jsonResult);
-        })
-    });
-}
-
-function _scrapeDetails(productURL, selectors, browser, ph) {
     var jsonResult = {
         "status": true,
         "productURL": productURL,
+        "scraped": {},
         "errors": [],
         "browser": browser,
-        "selectors": _.cloneDeep(selectors)
+        "selectors": _.cloneDeep(selectorArray)
     };
+
+    var crawlerTimeout = null;
     return new Promise(function (resolve, reject) {
-        if (!browser) {
-            browser = "phantomjs";
-        }
+        //setup timeout function , make function return when server no response
+        crawlerTimeout = setTimeout(function () {
+            jsonResult.status = false;
+            jsonResult.errors.push({
+                "message": "crawler server timeout after " + crawlerInstance.timeout / 1000 + " seconds"
+            });
+            reject(jsonResult);
+        }, crawlerInstance.timeout);
 
-        var instanceTimeout = setTimeout(function () {
-            ph.restart()
-                .catch(function (err) {
-                    logger.error("Restart phantom instance:", err);
-                })
-                .finally(function () {
-                    jsonResult.status = false;
-                    jsonResult.errors.push({
-                        "message": "server '" + ph.id + "' timeout"
-                    })
-                    resolve(jsonResult)
-                })
-
-
-        }, ph.timeout);
-        try {
-            if (_isValidBrowser(browser)) {
-                var driver = new webdriver.Builder()
-                    .forBrowser(browser)
-                    .usingServer(ph.server)
-                    .build();
-                driver.get(productURL);
-
+        client.init(function (err, data) {
+            //err , when failed to init client
+            //data , when init successfully , will return the server configurations like
+            //var data = {
+            //    sessionId: '15cd4400-0047-11e5-8923-d31ed4b62bfc',
+            //    status: 0,
+            //    value: {
+            //        browserName: 'phantomjs',
+            //        version: '1.9.8',
+            //        driverName: 'ghostdriver',
+            //        driverVersion: '1.1.0',
+            //        platform: 'windows-7-32bit',
+            //        javascriptEnabled: true,
+            //        takesScreenshot: true,
+            //        handlesAlerts: false,
+            //        databaseEnabled: false,
+            //        locationContextEnabled: false,
+            //        applicationCacheEnabled: false,
+            //        browserConnectionEnabled: false,
+            //        cssSelectorsEnabled: true,
+            //        webStorageEnabled: false,
+            //        rotatable: false,
+            //        acceptSslCerts: false,
+            //        nativeEvents: true,
+            //        proxy: {proxyType: 'direct'}
+            //    }
+            //}
+            if (err) {
+                logger.error("error when init webdriver");
+                jsonResult.errors.push({
+                    "message": err.message || err
+                });
+                jsonResult.status = false;
+                reject(jsonResult);
+            }
+        })
+            .then(function () {
+                return client.url(productURL)
+                    .catch(function (err) {
+                        logger.error("error when open product page ,may need to init crawler again")
+                        jsonResult.errors.push({
+                            "message": err.message || err
+                        });
+                        jsonResult.status = false;
+                        reject(jsonResult);
+                    });
+            })
+            .then(function () {
+                logger.debug("handle product crawler");
+                //reached product page ,begin to scrape information
+                var selectors = _.cloneDeep(selectorArray);
                 async.until(function isDone() {
                     return selectors.length === 0;
                 }, function next(callback) {
-                    var selector = selectors.shift();
-                    _extractDataBySelector(driver, selector, jsonResult, productURL)
-                        .then(function (result) {
-                            jsonResult = result;
-                        })
-                        .catch(function (err) {
-                            logger.error(err)
+                    var se = selectors.shift();
+                    logger.info("Scraping '%s' with selectors '%s'", se.field, se.content)
+                    extractBySelector(client, se.content, se.scrapeType)
+                        .then(function (scrapedResult) {
+                            logger.info("Scraped '%s' ,value '%s'", se.field, scrapedResult.content);
+                            if (scrapedResult.content) {
+                                jsonResult.scraped[se.field] = scrapedResult.content;
+                            } else {
+                                se.errors = scrapedResult.errors;
+                                jsonResult.errors.push(se)
+                            }
                         })
                         .finally(function () {
                             callback();
                         })
                 }, function done() {
-                    driver.quit()
-                        .then(function () {
-                            clearTimeout(instanceTimeout);
-                            resolve(jsonResult);
-                        })
+                    resolve(jsonResult);
                 })
-            } else {
-                logger.error("Invalid browser '%s'", browser);
-                jsonResult.errors.push({
-                    "message": "Invalid browser '" + browser + "'"
-                })
-                clearTimeout(instanceTimeout);
-                resolve(jsonResult);
-            }
-        } catch (err) {
-            logger.error("catch error");
-            logger.error(err);
-            jsonResult.errors.push({
-                "message": err.message || err
             })
-            clearTimeout(instanceTimeout);
-            resolve(jsonResult);
-        }
     })
+        .then(function (result) {
+            client.close();
+            return result;
+        })
+        .catch(function (result) {
+            return result;
+        })
+        .finally(function () {
+            if (crawlerTimeout) {
+                clearTimeout(crawlerTimeout);
+            }
+            logger.error("=====================    Close Client   ==================================")
+        });
+}
+
+/**
+ * scrape content by multiply selectors for single filed ,
+ * if first one got result ,will break , otherwise execute next one
+ * @param client webdriverIO object
+ * @param selectors  css or xpath array , like ["div.test1","div.test2"]
+ * @param type
+ * @returns {*}
+ */
+function extractBySelector(client, selectors1, scrapeType) {
+    return new Promise(function (resolve, reject) {
+        var result = {
+            "content": null,
+            "errors": []
+        };
+        var selectors = _.cloneDeep(selectors1);
+        if (selectors && Array.isArray(selectors)) {
+            async.until(function isDone() {
+                return result.content || selectors.length === 0;
+            }, function next(callback) {
+                var selector = selectors.shift();
+                switch (scrapeType.type) {
+                    case 'value' :
+                    {
+                        client.getValue(selector, handle);
+                        break;
+                    }
+                    case 'html':
+                    {
+                        client.getHTML(selector, handle);
+                        break;
+                    }
+                    case 'attribute':
+                    {
+                        client.getAttribute(selector, scrapeType.attribute, handle);
+                        break;
+                    }
+                    default :
+                    {
+                        client.getText(selector, handle);
+                    }
+                }
+                function handle(err, data) {
+                    //logger.debug("scraped content '%s' with selector '%s' on type '%s'", data, selector, scrapeType.type);
+                    if (err) {
+                        result.errors.push({
+                            "message": err.message || err
+                        });
+                        if (result.errors.length === selectors.length) {
+                            logger.error(errors);
+                        }
+                    } else {
+                        result.content = data;
+                    }
+                    callback();
+                }
+            }, function done() {
+                if (result.content) {
+                    //if one of the selector got content , mean got content successfully , can ignore other errors
+                    delete result.errors;
+                }
+                resolve(result);
+            })
+        } else {
+            result.errors.push({
+                "message": "invalid selectors",
+                "selector": selectors
+            });
+            resolve(result);
+        }
+    });
 }
 
 
@@ -175,11 +234,6 @@ function _isValidBrowser(browser) {
     return true;
 }
 
-function writeScreenshot(data, name) {
-    name = name || 'ss.png';
-    var screenshotPath = path.join(__dirname, "");
-    fs.writeFileSync(screenshotPath + name, data, 'base64');
-};
 
 process.on("uncaughtException", function (err) {
     logger.error("UncaughtException:", err);
