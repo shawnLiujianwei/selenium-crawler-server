@@ -11,8 +11,8 @@ var async = require("async");
 var useSeleniumServer = true;
 var path = require("path");
 var fs = require("fs");
-var cacheServicae = require("../db/cache");
-var errorLog = require("../db/errorLog");
+var cacheServicae = require("./cache");
+var errorLog = require("./errorLog");
 exports.priceSpider = function (productUrl, locale, site, port, borwser) {
     return retailerService.getSelector(productUrl, locale, site)
         .then(function (selectorConfig) {

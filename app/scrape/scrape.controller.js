@@ -8,7 +8,7 @@ var productService = require("../../components/db/product");
 var logger = require("node-config-logger").getLogger("app-webdriver/app/scrape/scrape.controller.js");
 var Promise = require("bluebird");
 var dispatcher = require("../../components/crawler/dispatcher");
-var dotterUtil = require("../../../components/utils/dotterUtil");
+var dotterUtil = require("../../components/utils/dotterUtil");
 //var body = {
 //    "productURLs": [],//required
 //    "locale": "",//required,

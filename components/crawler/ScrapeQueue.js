@@ -3,7 +3,7 @@
  */
 var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/ScrapeQueue.js");
-var RetailerScript = require("./retailers");
+var RetailerScript = require("./retailers/index");
 var scrapeCache = require("../db/cache");
 function ScrapeQueue(crawlerInstance, options) {
     this.crawlerInstance = crawlerInstance;

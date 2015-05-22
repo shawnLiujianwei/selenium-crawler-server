@@ -3,7 +3,7 @@
  */
 
 var expect = require('chai').expect;
-var RetailerObject = require("../../../../../app-webdriver/components/crawler/retailers");
+var RetailerObject = require("../../../.././retailers");
 
 describe("Test app-webdriver/components/crawler/retailers/index.js", function () {
 

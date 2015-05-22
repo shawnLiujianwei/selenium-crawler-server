@@ -1,7 +1,7 @@
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/BatchRequest.js");
 var Promise = require("bluebird");
 var dispatcher = require("./dispatcher");
-var delay = require("../../../components/utils/delayPromise")
+var delay = require("../utils/delayPromise")
 var _requestId = 1;
 function BatchRequest(options) {
     this.id = "br." + _requestId++;

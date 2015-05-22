@@ -1,7 +1,7 @@
 /**
  * Created by Shawn Liu on 2015/5/20.
  */
-var listenerConfig = require("config").listener.driverInstanceApp;
+var listenerConfig = require("config").seleniumHub;
 var Promise = require("bluebird");
 var host = "http://127.0.0.1";
 var BatchRequest = require("./BatchRequest");
@@ -42,16 +42,16 @@ exports.scrape = function (crawlerType, urls, locale, retailer, browser) {
 }
 
 exports.initAllInstance = function () {
-    var server = "http://127.0.0.1:" + listenerConfig.seleniumHub + "/wd/hub";
+    var server = "http://127.0.0.1:" + listenerConfig.port + "/wd/hub";
     //crawlerInstances.push(new CrawlerInstance(
     //    server,"seleniumHub",
     //))
 
-    listenerConfig.seleniumServer.forEach(function (port) {
-        crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "selenium", listenerConfig.seleniumHub));
+    listenerConfig.chrome.forEach(function (port) {
+        crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", listenerConfig.port));
     })
-    listenerConfig.phantomCluster.forEach(function (port) {
-        crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.seleniumHub));
+    listenerConfig.phantom.forEach(function (port) {
+        crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.port));
     })
 
     //var host = "http://127.0.0.1";

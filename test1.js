@@ -1,7 +1,7 @@
 /**
  * Created by liujianwei on 2015/5/22.
  */
-var CrawlerInstance = require("./app-webdriver/components/crawler/CrawlerInstance");
+var CrawlerInstance = require("./components/crawler/CrawlerInstance");
 
 var serverURL = "http://localhost:4141/wd/hub";
 var type = "phantomjs";

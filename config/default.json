@@ -18,25 +18,21 @@
     }
   },
   "listener": {
-    "webdriverApp": {
-      "port": 7001
-    },
-    "driverInstanceApp": {
-      "port": 7002,
-      "seleniumHub": 4141,
-      "phantomCluster": [
-        7010,
-        7011
-      ],
-      "seleniumServer": [
-        7100,
-        7101
-      ]
-    }
+    "port": 7001
   },
   "app": {
     "name": "selenium-webserver",
     "script": "app-webdriver/startup.js",
     "mode": "fork"
+  },
+  "seleniumHub": {
+    "port": 4141,
+    "phantom": [
+      5100,
+      5101
+    ],
+    "chrome": [
+      6100
+    ]
   }
 }

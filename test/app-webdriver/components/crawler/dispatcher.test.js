@@ -2,7 +2,7 @@
  * Created by Shawn Liu on 2015/5/21.
  */
 var expect = require('chai').expect;
-var dispatcher = require("../../../../app-webdriver/components/crawler/dispatcher");
+var dispatcher = require("../../.././dispatcher");
 var logger = require("node-config-logger").getLogger("test/app-webdriver/components/crawler/dispatcher.js");
 describe("Test app-webdriver/components/crawler/dispather.js", function () {
 
