@@ -1,0 +1,81 @@
+{
+  "id": "retailerID",
+  "domain": "domain",
+  "selector": {
+    "detail": {
+      "stock": {
+        "field": "stock",
+        "required": true,
+        "content": [
+          {
+            "status": "out-of-stock",
+            "selectors": []
+          },
+          {
+            "status": "in-stock",
+            "selectors": []
+          },
+          {
+            "status": "notfound",
+            "selectors": []
+          }
+        ]
+      },
+      "info": [
+        {
+          "field": "price_now",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ],
+          "requiredWhenStockIs": ["in-stock"]
+        },
+        {
+          "field": "price_was",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ]
+        },
+        {
+          "field": "offer",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ]
+        },
+        {
+          "field": "name",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ],
+          "requiredWhenStock": [
+            "in-stock",
+            "out-of-stock"
+          ]
+        },
+        {
+          "field": "image",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ],
+          "requiredWhenStock": [
+            "in-stock",
+            "out-of-stock"
+          ]
+        },
+        {
+          "field": "description",
+          "selectors": [
+            "selector1",
+            "selector2"
+          ]
+        }
+      ]
+    },
+    "search": {
+    }
+  }
+}
