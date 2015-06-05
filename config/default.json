@@ -20,11 +20,6 @@
   "listener": {
     "port": 7001
   },
-  "app": {
-    "name": "selenium-webserver",
-    "script": "app-webdriver/startup.js",
-    "mode": "fork"
-  },
   "seleniumHub": {
     "port": 4141,
     "phantom": [

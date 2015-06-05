@@ -36,35 +36,16 @@
       "replaceConsole": true
     }
   },
-  "listener": {
-    "webdriverApp": {
-      "port": 7001
-    },
-    "driverInstanceApp": {
-      "port": 7002,
-      "seleniumHub": 4141,
-      "phantomCluster": [
-        7010,
-        7011,
-        7012,
-        7013,
-        7014,
-        7015,
-        7016,
-        7017,
-        7018,
-        7019
-      ],
-      "seleniumServer": [
-        7100,
-        7101
-      ]
-    }
-  },
-  "app": {
-    "name": "selenium-webserver",
-    "script": "app-webdriver/startup.js",
-    "mode": "cluster",
-    "instances": 2
+  "seleniumHub": {
+    "port": 4141,
+    "phantom": [
+      5100,
+      5101,
+      5102,
+      5103
+    ],
+    "chrome": [
+      6100
+    ]
   }
 }

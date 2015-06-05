@@ -14,7 +14,7 @@ var dispatcher = require("./components/crawler/dispatcher");
 var app = express();
 var server = require('http').createServer(app);
 require('./config/express')(app);
-require('./routes')(app);//http://www.tesco.com/groceries/Product/Details/?id=278068661
+require('./routes')(app);
 
 
 // Start server
