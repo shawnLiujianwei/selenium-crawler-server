@@ -30,3 +30,4 @@ exports.query = function (retailer) {
             return results;
         })
 }
+

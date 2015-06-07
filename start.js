@@ -41,14 +41,13 @@ function _setupCrawlerServer() {
 }
 
 function _startServer() {
-    var appConfig = config.app;
     var command = [];
     command.push("pm2 start");
     command.push(path.join(__dirname, "./app.js"));
     command.push("--name=webCrawler");
     if (process.env.NODE_ENV === "production") {
         //command.push("i " + os.cpus().length);
-        command.push("i 2");
+        command.push("-i 2");
         command.push("--max-memory-restart");
         command.push(_getMaxMemory());
     }
