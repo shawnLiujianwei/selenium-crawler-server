@@ -144,7 +144,7 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
                 resolve(result || jsonResult);
             })
             .catch(function (errResult) {
-                logger.error("#extractDetails():", errResult);
+                logger.error("#extractDetails():", errResult.errors);
                 reject(errResult || jsonResult);
             })
             .finally(function () {
@@ -194,6 +194,7 @@ function _initClient(client, jsonResult) {
                 jsonResult.status = false;
                 reject(jsonResult);
             } else {
+                logger.warn("resolve already")
                 resolve();
             }
         })
@@ -204,7 +205,6 @@ function _openUrl(client, productURL, jsonResult) {
     return new Promise(function (resolve, reject) {
         client.url(productURL)
             .then(function () {
-                logger.debug("Opening productPage");
                 resolve();
             })
             .catch(function (err) {
@@ -220,7 +220,7 @@ function _openUrl(client, productURL, jsonResult) {
 
 function _endClient(client) {
     return new Promise(function (resolve, reject) {
-        client.end(function () {
+        client.endAll(function () {
             logger.error("=====================    Close Client   ==================================")
             resolve();
         })

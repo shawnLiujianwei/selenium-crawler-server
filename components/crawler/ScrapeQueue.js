@@ -51,7 +51,7 @@ ScrapeQueue.prototype.push = function (job) {
                                     //"selectors": _.cloneDeep(selectorConfig)
                                 }
                             }
-                            logger.warn(jsonResult);
+                            //logger.warn(jsonResult);
                             return scrapeCache.insert(jsonResult)
                                 .then(function () {
                                     batch.appendResults(jsonResult);
