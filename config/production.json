@@ -12,7 +12,7 @@
         },
         {
           "type": "dateFile",
-          "filename": "/home/ubuntu/logs/nts-crawler-output.log",
+          "filename": "/home/ubuntu/logs/selenium-crawler-output.log",
           "pattern": "-yyyy-MM-dd",
           "alwaysIncludePattern": true,
           "backups": 10
@@ -22,7 +22,7 @@
           "level": "WARN",
           "appender": {
             "type": "dateFile",
-            "filename": "/home/ubuntu/logs/nts-crawler-error.log",
+            "filename": "/home/ubuntu/logs/selenium-crawler-error.log",
             "pattern": "-yyyy-MM-dd",
             "alwaysIncludePattern": true,
             "backups": 10,
