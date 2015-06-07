@@ -10,7 +10,7 @@ var os = require("os");
 var path = require("path");
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 process.env.NODE_CONFIG_DIR = path.join(__dirname, "./config");
-var seleniumServer = require("selenium-hub-launcher");
+var seleniumServerStartupFile = path.join(__dirname,"./components/seleniumInstance/startup.js");
 
 
 function _killExisting() {
@@ -31,7 +31,7 @@ function _killExisting() {
 function _setupCrawlerServer() {
     var command = [];
     command.push("pm2 start");
-    command.push(seleniumServer.startupFile);
+    command.push(seleniumServerStartupFile);
     command.push("--name=seleniumHub");
     if (process.env.NODE_ENV === "production") {
         command.push("--max-memory-restart");

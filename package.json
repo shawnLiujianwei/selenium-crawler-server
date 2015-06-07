@@ -39,7 +39,9 @@
     "selenium-standalone": "^4.4.0",
     "selenium-webdriver": "^2.44.0",
     "util-extend": "^1.0.1",
-    "webdriverio": "^2.4.5"
+    "webdriverio": "^2.4.5",
+    "chromedriver": "^2.15.0",
+    "selenium-server-standalone-jar": "^2.45.0"
   },
   "repository": {
     "type": "git",

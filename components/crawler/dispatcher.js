@@ -1,7 +1,7 @@
 /**
  * Created by Shawn Liu on 2015/5/20.
  */
-var listenerConfig = require("config").seleniumHub;
+var seleniumHubConfig = require("config").seleniumHub;
 var Promise = require("bluebird");
 var host = "http://127.0.0.1";
 var BatchRequest = require("./BatchRequest");
@@ -42,23 +42,23 @@ exports.scrape = function (crawlerType, urls, locale, retailer, browser) {
 }
 
 exports.initAllInstance = function () {
-    var server = "http://127.0.0.1:" + listenerConfig.port + "/wd/hub";
+    //var server = "http://127.0.0.1:" + seleniumHubConfig.port + "/wd/hub";
     //crawlerInstances.push(new CrawlerInstance(
     //    server,"seleniumHub",
     //))
-    //crawlerInstances.push(new CrawlerInstance(server + "- Hub:" + listenerConfig.port));
-    //listenerConfig.chrome.forEach(function (port) {
-    //    crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", listenerConfig.port));
+    //crawlerInstances.push(new CrawlerInstance(server + "- Hub:" + seleniumHubConfig.port));
+    //seleniumHubConfig.chrome.forEach(function (port) {
+    //    crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", seleniumHubConfig.port));
     //})
-    //listenerConfig.phantom.forEach(function (port) {
-    //    crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.port));
+    //seleniumHubConfig.phantom.forEach(function (port) {
+    //    crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", seleniumHubConfig.port));
     //})
 
     var host = "http://127.0.0.1";
-    //listenerConfig.seleniumServer.forEach(function (port) {
-    //    seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub", "selenium", port));
+    //seleniumHubConfig.seleniumServer.forEach(function (port) {
+    //    seleniumInstances.push(new CrawlerInstance(host + ":" + seleniumHubConfig.seleniumHub + "/wd/hub", "selenium", port));
     //})
-    listenerConfig.phantom.forEach(function (port) {
-        crawlerInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port));
+    seleniumHubConfig.phantom.forEach(function (port) {
+        crawlerInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port, seleniumHubConfig.port));
     })
 }

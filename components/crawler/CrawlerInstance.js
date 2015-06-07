@@ -9,8 +9,8 @@ var fs = require("fs");
 var rp = require("request-promise");
 var _ = require("lodash");
 var webdriverIO = require('webdriverio');
-var listenerConfig = require("config").listener.driverInstanceApp;
-function CrawlerInstance(serverURL, type, port) {
+var SeleniumInstance = require("../seleniumInstance").get();
+function CrawlerInstance(serverURL, type, port, hubPort) {
     this.server = serverURL;
     this.port = port;
     this.id = serverURL;
@@ -19,6 +19,7 @@ function CrawlerInstance(serverURL, type, port) {
         maxRetries: 0
     });
     this.type = type;
+    this.hub = hubPort;
     this.timeout = 120000;
 
 }
@@ -35,8 +36,10 @@ CrawlerInstance.prototype.request = function (job, retailerSelectorConfig, timeo
 
 
 CrawlerInstance.prototype.restart = function () {
-    // return rp("http://127.0.0.1:" + listenerConfig.port + "/driver/restart/" + this.type + "/" + this.port);
-    return Promise.resolve();
+    //return Promise.resolve();
+    var crawlerInstance = this;
+    //SeleniumInstance.port = crawlerInstance.hub;
+    return SeleniumInstance.registerNode(crawlerInstance.port, crawlerInstance.type, crawlerInstance.hub);
 }
 
 function extractDetails(productURL, selectorConfig, browser, crawlerInstance, timeout) {
@@ -66,44 +69,11 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
             jsonResult.errors = ["crawler server timeout after " + crawlerInstance.timeout / 1000 + " seconds"];
             reject(jsonResult);
         }, timeout || crawlerInstance.timeout);
-        return _initClient(client,jsonResult)
+        return _initClient(client, jsonResult, crawlerInstance)
             .then(function () {
-                //return client.url(productURL)
-                //    .catch(function (err) {
-                //        logger.error("error when open product page ,may need to init crawler again")
-                //        jsonResult.errors.push({
-                //            "message": err.message || err
-                //        });
-                //        jsonResult.status = false;
-                //        reject(jsonResult);
-                //    });
                 return _openUrl(client, productURL, jsonResult);
             })
             .then(function () {
-                //logger.debug("scraping '%s'", productURL);
-                ////reached product page ,begin to scrape information
-                //var selectors = _.cloneDeep(selectorArray);
-                //async.until(function isDone() {
-                //    return selectors.length === 0;
-                //}, function next(callback) {
-                //    var se = selectors.shift();
-                //    logger.info("Scraping '%s' with selectors '%s'", se.field, se.content)
-                //    extractBySelector(client, se.content, se.scrapeType)
-                //        .then(function (scrapedResult) {
-                //            logger.info("Scraped '%s' ,value '%s'", se.field, scrapedResult.content);
-                //            if (scrapedResult.content) {
-                //                jsonResult.scraped[se.field] = scrapedResult.content;
-                //            } else {
-                //                se.errors = scrapedResult.errors;
-                //                jsonResult.errors.push(se)
-                //            }
-                //        })
-                //        .finally(function () {
-                //            callback();
-                //        })
-                //}, function done() {
-                //    resolve(jsonResult);
-                //})
                 logger.info("scraping product '%s'", productURL);
                 return _extractStock(client, selectorConfig.stock)
                     .then(function (scrapedStock) {
@@ -117,7 +87,7 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
                             jsonResult.errors = scrapedInfo.errors;
                         } else {
                             jsonResult.status = true;
-                           delete jsonResult.errors;
+                            delete jsonResult.errors;
                         }
                         delete scrapedInfo.status;
                         delete scrapedInfo.errors;
@@ -135,7 +105,7 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
             })
             .then(function (r) {
                 return _endClient(client)
-                    .then(function(){
+                    .then(function () {
                         return r;
                     })
             })
@@ -159,46 +129,53 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
 
 }
 
-function _initClient(client, jsonResult) {
-    return new Promise(function (resolve, reject) {
-        client.init(function (err, data) {
-            //err , when failed to init client
-            //data , when init successfully , will return the server configurations like
-            //var data = {
-            //    sessionId: '15cd4400-0047-11e5-8923-d31ed4b62bfc',
-            //    status: 0,
-            //    value: {
-            //        browserName: 'phantomjs',
-            //        version: '1.9.8',
-            //        driverName: 'ghostdriver',
-            //        driverVersion: '1.1.0',
-            //        platform: 'windows-7-32bit',
-            //        javascriptEnabled: true,
-            //        takesScreenshot: true,
-            //        handlesAlerts: false,
-            //        databaseEnabled: false,
-            //        locationContextEnabled: false,
-            //        applicationCacheEnabled: false,
-            //        browserConnectionEnabled: false,
-            //        cssSelectorsEnabled: true,
-            //        webStorageEnabled: false,
-            //        rotatable: false,
-            //        acceptSslCerts: false,
-            //        nativeEvents: true,
-            //        proxy: {proxyType: 'direct'}
-            //    }
-            //}
-            if (err) {
-                logger.error("error when init webdriver");
-                jsonResult.errors = [err.message || err];
-                jsonResult.status = false;
-                reject(jsonResult);
-            } else {
-                logger.warn("resolve already")
-                resolve();
-            }
+/**
+ * init webdriverIO client , when failed to init
+ * will try to re-register the phantom(chrome) node by given port
+ * @param client
+ * @param jsonResult
+ * @param crawlerInstance
+ * @param retryTimes
+ * @returns {*}
+ * @private
+ */
+function _initClient(client, jsonResult, crawlerInstance, retryTimes) {
+    if (!retryTimes && retryTimes !== 0) {
+        retryTimes = 1;
+    }
+
+    function _init() {
+        return new Promise(function (resolve, reject) {
+            client.init(function (err, data) {
+                if (err) {
+                    logger.error("error when init webdriver");
+                    jsonResult.errors = [err.message || err];
+                    jsonResult.status = false;
+                    reject(jsonResult);
+                } else {
+                    resolve();
+                }
+            })
         })
-    })
+    }
+
+    return _init()
+        .catch(function (jsonResult) {
+            if (retryTimes > 0) {
+                retryTimes--;
+                return crawlerInstance.restart()
+                    .then(function () {
+                        return _init();
+                    })
+                    .catch(function () {
+                        return Promise.reject(jsonResult);
+                    })
+
+            } else {
+                return Promise.reject(jsonResult);
+            }
+        });
+
 }
 
 function _openUrl(client, productURL, jsonResult) {
