@@ -30,10 +30,9 @@ BatchRequest.prototype.process = function () {
         br.reject = reject;
     });
 
-
-    dispatcher.getAvailableInstance(br.browser)
-        .then(function (crawlerInstance) {
-            br.pages.forEach(function (productURL) {
+    br.pages.forEach(function (productURL) {
+        dispatcher.getAvailableInstance(br.browser)
+            .then(function (crawlerInstance) {
                 crawlerInstance.queue.push({
                     "productURL": productURL,
                     "method": br.method,
@@ -43,7 +42,7 @@ BatchRequest.prototype.process = function () {
                     "batchRequest": br
                 });
             });
-        })
+    })
 
     return this.promise;
 };

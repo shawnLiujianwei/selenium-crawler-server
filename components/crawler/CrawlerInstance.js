@@ -21,6 +21,7 @@ function CrawlerInstance(serverURL, type, port, hubPort) {
     this.type = type;
     this.hub = hubPort;
     this.timeout = 120000;
+    this.restartTimes = 3;
 
 }
 
@@ -59,7 +60,8 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
         "productURL": productURL,
         "scraped": {},
         "errors": [],
-        "browser": browser
+        "browser": browser,
+        "updateTime": new Date()
         //"selectors": _.cloneDeep(selectorConfig)
     };
 
@@ -69,7 +71,7 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
             jsonResult.errors = ["crawler server timeout after " + crawlerInstance.timeout / 1000 + " seconds"];
             reject(jsonResult);
         }, timeout || crawlerInstance.timeout);
-        return _initClient(client, jsonResult, crawlerInstance)
+        return _initClient(client, jsonResult, crawlerInstance, crawlerInstance.restartTimes)
             .then(function () {
                 return _openUrl(client, productURL, jsonResult);
             })

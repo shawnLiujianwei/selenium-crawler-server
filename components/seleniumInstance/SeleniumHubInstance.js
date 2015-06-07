@@ -80,7 +80,10 @@ SeleniumHubInstance.prototype.registerNode = function (port, type, hubPort) {
                         handleLog(data)
                     });
                     logger.info("Register '%s' node with port '%s' to HUB '%s'", type, port, hubInstance.port);
-                    resolve();
+                    delay(2000)
+                        .then(function () {
+                            resolve();
+                        })
                 } else {
                     var args = [];
                     args = [];
@@ -98,7 +101,10 @@ SeleniumHubInstance.prototype.registerNode = function (port, type, hubPort) {
                             reject();
                         } else {
                             logger.info("Register '%s' node with port '%s' to HUB '%s'", type, port, hubInstance.port);
-                            resolve()
+                            delay(2000)
+                                .then(function () {
+                                    resolve();
+                                })
                         }
                     });
                     cp.stdout.on("data", function (data) {
@@ -115,19 +121,19 @@ SeleniumHubInstance.prototype.registerNode = function (port, type, hubPort) {
 
 function handleLog(data) {
     data = data.toString();
-    if (data.indexOf("INFO") !== -1) {
-        logger.info(data);
-    } else if (data.indexOf("DEBUG") !== -1) {
-        logger.debug(data);
-    } else if (data.indexOf("WARN") !== -1) {
-        logger.warn(data);
-    } else if (data.indexOf("ERROR") !== -1) {
-        logger.error(data);
-    } else {
-        logger.info(data);
-    }
+    logger.debug(data);
+    //if (data.indexOf("INFO") !== -1) {
+    //    logger.info(data);
+    //} else if (data.indexOf("DEBUG") !== -1) {
+    //    logger.debug(data);
+    //} else if (data.indexOf("WARN") !== -1) {
+    //    logger.warn(data);
+    //} else if (data.indexOf("ERROR") !== -1) {
+    //    logger.error(data);
+    //} else {
+    //    logger.info(data);
+    //}
 }
-
 
 
 module.exports = SeleniumHubInstance;
