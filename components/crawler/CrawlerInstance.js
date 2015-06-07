@@ -117,9 +117,12 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
                             jsonResult.errors = scrapedInfo.errors;
                         } else {
                             jsonResult.status = true;
-                            delete scrapedInfo.status;
-                            jsonResult.scraped = scrapedInfo;
+                           delete jsonResult.errors;
                         }
+                        delete scrapedInfo.status;
+                        delete scrapedInfo.errors;
+                        jsonResult.scraped = scrapedInfo;
+                        jsonResult.scraped = scrapedInfo;
                         return jsonResult;
                     })
                     .catch(function (errors) {
@@ -234,7 +237,8 @@ function _endClient(client) {
  * @returns {Promise}
  * @private
  */
-function _extractInfo(client, infos, scrapedResult) {
+function _extractInfo(client, infos, scrapedResult1) {
+    var scrapedResult = _.cloneDeep(scrapedResult1);
     scrapedResult.status = true;
     return new Promise(function (resolve, reject) {
         infos = infos.filter(function (item) {
@@ -384,7 +388,6 @@ function _scrapeBySelectors(client, scrapeConfig, selectors) {
                 case 'textInclude':
                 {
                     client.getText(selector, function (err, data) {
-                        logger.debug(data, scrapeConfig.keys)
                         _handle(err, err ? false : _include(data, scrapeConfig.keys));
                     });
                     break;

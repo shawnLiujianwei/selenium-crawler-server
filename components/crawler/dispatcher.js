@@ -50,15 +50,15 @@ exports.initAllInstance = function () {
     //listenerConfig.chrome.forEach(function (port) {
     //    crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", listenerConfig.port));
     //})
-    listenerConfig.phantom.forEach(function (port) {
-        crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.port));
-    })
+    //listenerConfig.phantom.forEach(function (port) {
+    //    crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.port));
+    //})
 
-    //var host = "http://127.0.0.1";
+    var host = "http://127.0.0.1";
     //listenerConfig.seleniumServer.forEach(function (port) {
     //    seleniumInstances.push(new CrawlerInstance(host + ":" + listenerConfig.seleniumHub + "/wd/hub", "selenium", port));
     //})
-    //listenerConfig.phantomCluster.forEach(function (port) {
-    //    phantomInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port));
-    //})
+    listenerConfig.phantom.forEach(function (port) {
+        crawlerInstances.push(new CrawlerInstance(host + ":" + port, "phantomjs", port));
+    })
 }
