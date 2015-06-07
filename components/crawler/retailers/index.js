@@ -267,14 +267,15 @@ RetailerObject.prototype.getSelector = function () {
 }
 
 RetailerObject.prototype.format = function (jsonObject) {
-    return _extractInfo(this.productURL, this.locale, this.retailer)
-        .then(function (result) {
-            if (1 === 2 && result && result.retailerFile) {
-                return require(result.retailerFile).format(jsonObject);
-            } else {
-                return _basicFormat(jsonObject);
-            }
-        })
+    return Promise.resolve(jsonObject)
+    //return _extractInfo(this.productURL, this.locale, this.retailer)
+    //    .then(function (result) {
+    //        if (1 === 2 && result && result.retailerFile) {
+    //            return require(result.retailerFile).format(jsonObject);
+    //        } else {
+    //            return _basicFormat(jsonObject);
+    //        }
+    //    })
 }
 
 function _basicFormat(jsonResult) {

@@ -46,10 +46,10 @@ exports.initAllInstance = function () {
     //crawlerInstances.push(new CrawlerInstance(
     //    server,"seleniumHub",
     //))
-
-    listenerConfig.chrome.forEach(function (port) {
-        crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", listenerConfig.port));
-    })
+    //crawlerInstances.push(new CrawlerInstance(server + "- Hub:" + listenerConfig.port));
+    //listenerConfig.chrome.forEach(function (port) {
+    //    crawlerInstances.push(new CrawlerInstance(server + " - Node:" + port, "chrome", listenerConfig.port));
+    //})
     listenerConfig.phantom.forEach(function (port) {
         crawlerInstances.push(new CrawlerInstance(server + "- Node:" + port, "phantomjs", listenerConfig.port));
     })

@@ -1,0 +1,106 @@
+{
+  "id": "groceries.tesco.com",
+  "domain": "tesco.com",
+  "config": {
+    "detail": {
+      "stock": {
+        "required": true,
+        "field": "stock",
+        "statusList": [
+          {
+            "status": "out-of-stock",
+            "order": 0,
+            "scrape": {
+              "type": "textInclude",
+              "keys": [
+                "not available"
+              ]
+            },
+            "selectors": [
+              "div.noStock p.unavailableMsg"
+            ]
+          },
+          {
+            "status": "in-stock",
+            "order": 1,
+            "selectors": [
+              ".descriptionDetails span.linePrice"
+            ],
+            "scrape": {
+              "type": "elementExist"
+            }
+          },
+          {
+            "status": "notfound",
+            "order": 2,
+            "selectors": [],
+            "scrape": {
+              "type": "textInclude",
+              "keys": []
+            }
+          }
+        ]
+      },
+      "info": [
+        {
+          "field": "price_now",
+          "requiredWhenStatusInclude": [
+            "in-stock"
+          ],
+          "selectors": [".descriptionDetails span.linePrice"],
+          "scrape": {
+            "type": "text"
+          }
+        },
+        {
+          "field": "price_was",
+          "requiredWhenStatusInclude": [],
+          "selectors": [],
+          "scrape": {
+            "type": "text"
+          }
+        },
+        {
+          "field": "offer",
+          "requiredWhenStatusInclude": [],
+          "selectors": ["div.desc > div > div > div > a > em"],
+          "scrape": {
+            "type": "text"
+          }
+        },
+        {
+          "field": "title",
+          "requiredWhenStatusInclude": [
+            "in-stock",
+            "out-of-stock"
+          ],
+          "selectors": ["#breadcrumbNav  li:nth-child(3)"],
+          "scrape": {
+            "type": "text"
+          }
+        },
+        {
+          "field": "image",
+          "requiredWhenStatusInclude": [
+            "in-stock",
+            "out-of-stock"
+          ],
+          "selectors": ["div.presentationWrapper > div > a > img"],
+          "scrape": {
+            "type": "attribute",
+            "attr": "src"
+          }
+        },
+        {
+          "field": "description",
+          "requiredWhenStatusInclude": ["ul.descriptionSection"],
+          "selectors": [],
+          "scrape": {
+            "type": "html"
+          }
+        }
+      ]
+    },
+    "search": {}
+  }
+}

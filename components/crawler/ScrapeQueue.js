@@ -5,10 +5,11 @@ var async = require("async");
 var logger = require("node-config-logger").getLogger("app-webdriver/components/crawler/ScrapeQueue.js");
 var RetailerScript = require("./retailers/index");
 var scrapeCache = require("../db/cache");
+var _ = require("lodash");
 function ScrapeQueue(crawlerInstance, options) {
     this.crawlerInstance = crawlerInstance;
     this.options = options || {
-        maxRetries: 3
+        maxRetries: 1
     };
     this.processing = false;
     this.jobs = [];
@@ -28,7 +29,7 @@ ScrapeQueue.prototype.push = function (job) {
             var job = jobQueue.jobs.shift();
             job.attempt = job.attempt || 1;
             var batch = job.batchRequest;
-            delete job.batchRequest;
+            job.batchRequest;
             var retailerScript = new RetailerScript(job.productURL, job.locale, job.retailer);
             logger.info("job queue '%s' - scraping '%s' for batch request '%s'", jobQueue.id, job.productURL, batch.id);
             retailerScript.getSelector()
@@ -41,22 +42,31 @@ ScrapeQueue.prototype.push = function (job) {
                         })
                         .then(function (jsonResult) {
                             //batch.appendResults(jsonResult);
+                            if (!jsonResult) {
+                                jsonResult = {
+                                    "status": false,
+                                    "productURL": job.productURL,
+                                    "errors": ["no result from CrawlerInstance"],
+                                    "browser": job.browser || selectorConfig.browser
+                                    //"selectors": _.cloneDeep(selectorConfig)
+                                }
+                            }
+                            logger.warn(jsonResult);
                             return scrapeCache.insert(jsonResult)
                                 .then(function () {
                                     batch.appendResults(jsonResult);
                                     //return jsonResult;
                                 })
+
                         })
-                        .catch(function (err) {
-                            logger.error("Failed to process ", job, " with ", err.message);
-                            if (job.attempt++ <= q.options.maxRetries) {
+                        .catch(function (jsonResult) {
+                            var tmp = _.cloneDeep(job);
+                            delete tmp.batchRequest;
+                            logger.error("Failed to process ", tmp, " with ", jsonResult.errors);
+                            if (job.attempt++ <= jobQueue.options.maxRetries) {
                                 jobQueue.jobs.unshift(job);
                             } else {
-                                batch.appendResults({
-                                    status: false,
-                                    url: job.url,
-                                    message: err.message
-                                });
+                                batch.appendResults(jsonResult);
                             }
                         });
                 })

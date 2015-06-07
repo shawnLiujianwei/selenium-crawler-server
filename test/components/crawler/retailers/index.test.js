@@ -3,9 +3,9 @@
  */
 
 var expect = require('chai').expect;
-var RetailerObject = require("../../../.././retailers");
+var RetailerObject = require("../../../../components/crawler/retailers");
 
-describe("Test app-webdriver/components/crawler/retailers/index.js", function () {
+describe("Test components/crawler/retailers/index.js", function () {
 
     it("#format() format result with oos selector error", function (done) {
         var result = {
@@ -38,5 +38,20 @@ describe("Test app-webdriver/components/crawler/retailers/index.js", function ()
             .finally(function () {
                 done();
             })
+    });
+    it.only("Get retailer config", function (done) {
+        var url = "http://www.tesco.com/groceries/Product/Details/?id=273797773";
+        var retailerScript = new RetailerObject(url, "en_gb");
+        retailerScript.getSelector()
+            .then(function (config) {
+                expect(config.id).equal("groceries.tesco.com")
+            })
+            .catch(function (err) {
+                console.error(err);
+            })
+            .finally(function () {
+                done();
+            })
+
     })
 })

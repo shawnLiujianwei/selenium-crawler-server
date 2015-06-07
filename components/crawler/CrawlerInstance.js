@@ -16,19 +16,19 @@ function CrawlerInstance(serverURL, type, port) {
     this.id = serverURL;
     this.queue = new ScrapeQueue(this, {
         id: this.server,
-        maxRetries: 3
+        maxRetries: 0
     });
     this.type = type;
-    this.timeout = 60000;
+    this.timeout = 120000;
 
 }
 
-CrawlerInstance.prototype.request = function (job, retailerSelectorConfig) {
+CrawlerInstance.prototype.request = function (job, retailerSelectorConfig, timeout) {
 
     if (job.method === "details") {
-        return extractDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
+        return extractDetails(job.productURL, retailerSelectorConfig.config.detail, retailerSelectorConfig.browser || job.browser, this, timeout);
     } else if (job.method === "links") {
-        return extractDetails(job.productURL, retailerSelectorConfig.selectors, retailerSelectorConfig.browser || job.browser, this);
+        return extractDetails(job.productURL, retailerSelectorConfig.config.search, retailerSelectorConfig.browser || job.browser, this);
     }
     //return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
@@ -39,7 +39,7 @@ CrawlerInstance.prototype.restart = function () {
     return Promise.resolve();
 }
 
-function extractDetails(productURL, selectorArray, browser, crawlerInstance) {
+function extractDetails(productURL, selectorConfig, browser, crawlerInstance, timeout) {
     var client = webdriverIO
         .remote({
             desiredCapabilities: {
@@ -48,26 +48,116 @@ function extractDetails(productURL, selectorArray, browser, crawlerInstance) {
             port: crawlerInstance.port
         });
 
+
+    var crawlerTimeout = null;
+    //setup timeout function , make function return when server no response
     var jsonResult = {
         "status": true,
         "productURL": productURL,
         "scraped": {},
         "errors": [],
-        "browser": browser,
-        "selectors": _.cloneDeep(selectorArray)
+        "browser": browser
+        //"selectors": _.cloneDeep(selectorConfig)
     };
 
-    var crawlerTimeout = null;
     return new Promise(function (resolve, reject) {
-        //setup timeout function , make function return when server no response
         crawlerTimeout = setTimeout(function () {
             jsonResult.status = false;
-            jsonResult.errors.push({
-                "message": "crawler server timeout after " + crawlerInstance.timeout / 1000 + " seconds"
-            });
+            jsonResult.errors = ["crawler server timeout after " + crawlerInstance.timeout / 1000 + " seconds"];
             reject(jsonResult);
-        }, crawlerInstance.timeout);
+        }, timeout || crawlerInstance.timeout);
+        return _initClient(client,jsonResult)
+            .then(function () {
+                //return client.url(productURL)
+                //    .catch(function (err) {
+                //        logger.error("error when open product page ,may need to init crawler again")
+                //        jsonResult.errors.push({
+                //            "message": err.message || err
+                //        });
+                //        jsonResult.status = false;
+                //        reject(jsonResult);
+                //    });
+                return _openUrl(client, productURL, jsonResult);
+            })
+            .then(function () {
+                //logger.debug("scraping '%s'", productURL);
+                ////reached product page ,begin to scrape information
+                //var selectors = _.cloneDeep(selectorArray);
+                //async.until(function isDone() {
+                //    return selectors.length === 0;
+                //}, function next(callback) {
+                //    var se = selectors.shift();
+                //    logger.info("Scraping '%s' with selectors '%s'", se.field, se.content)
+                //    extractBySelector(client, se.content, se.scrapeType)
+                //        .then(function (scrapedResult) {
+                //            logger.info("Scraped '%s' ,value '%s'", se.field, scrapedResult.content);
+                //            if (scrapedResult.content) {
+                //                jsonResult.scraped[se.field] = scrapedResult.content;
+                //            } else {
+                //                se.errors = scrapedResult.errors;
+                //                jsonResult.errors.push(se)
+                //            }
+                //        })
+                //        .finally(function () {
+                //            callback();
+                //        })
+                //}, function done() {
+                //    resolve(jsonResult);
+                //})
+                logger.info("scraping product '%s'", productURL);
+                return _extractStock(client, selectorConfig.stock)
+                    .then(function (scrapedStock) {
+                        jsonResult.status = true;
+                        jsonResult.scraped.stock = scrapedStock;
+                        return _extractInfo(client, selectorConfig.info, jsonResult.scraped);
+                    })
+                    .then(function (scrapedInfo) {
+                        if (!scrapedInfo.status) {
+                            jsonResult.status = false;
+                            jsonResult.errors = scrapedInfo.errors;
+                        } else {
+                            jsonResult.status = true;
+                            delete scrapedInfo.status;
+                            jsonResult.scraped = scrapedInfo;
+                        }
+                        return jsonResult;
+                    })
+                    .catch(function (errors) {
+                        logger.error("#_extractStock():", errors);
 
+                        jsonResult.status = false;
+                        jsonResult.errors = errors;
+                        return jsonResult;
+                    })
+            })
+            .then(function (r) {
+                return _endClient(client)
+                    .then(function(){
+                        return r;
+                    })
+            })
+            .then(function (result) {
+                //return result;
+                resolve(result || jsonResult);
+            })
+            .catch(function (errResult) {
+                logger.error("#extractDetails():", errResult);
+                reject(errResult || jsonResult);
+            })
+            .finally(function () {
+
+                if (crawlerTimeout) {
+                    clearTimeout(crawlerTimeout);
+                }
+
+            });
+    })
+
+
+}
+
+function _initClient(client, jsonResult) {
+    return new Promise(function (resolve, reject) {
         client.init(function (err, data) {
             //err , when failed to init client
             //data , when init successfully , will return the server configurations like
@@ -97,64 +187,253 @@ function extractDetails(productURL, selectorArray, browser, crawlerInstance) {
             //}
             if (err) {
                 logger.error("error when init webdriver");
+                jsonResult.errors = [err.message || err];
+                jsonResult.status = false;
+                reject(jsonResult);
+            } else {
+                resolve();
+            }
+        })
+    })
+}
+
+function _openUrl(client, productURL, jsonResult) {
+    return new Promise(function (resolve, reject) {
+        client.url(productURL)
+            .then(function () {
+                logger.debug("Opening productPage");
+                resolve();
+            })
+            .catch(function (err) {
+                logger.error("error when open product page ,may need to init crawler again")
                 jsonResult.errors.push({
                     "message": err.message || err
                 });
                 jsonResult.status = false;
                 reject(jsonResult);
-            }
-        })
-            .then(function () {
-                return client.url(productURL)
-                    .catch(function (err) {
-                        logger.error("error when open product page ,may need to init crawler again")
-                        jsonResult.errors.push({
-                            "message": err.message || err
-                        });
-                        jsonResult.status = false;
-                        reject(jsonResult);
-                    });
-            })
-            .then(function () {
-                logger.debug("handle product crawler");
-                //reached product page ,begin to scrape information
-                var selectors = _.cloneDeep(selectorArray);
-                async.until(function isDone() {
-                    return selectors.length === 0;
-                }, function next(callback) {
-                    var se = selectors.shift();
-                    logger.info("Scraping '%s' with selectors '%s'", se.field, se.content)
-                    extractBySelector(client, se.content, se.scrapeType)
-                        .then(function (scrapedResult) {
-                            logger.info("Scraped '%s' ,value '%s'", se.field, scrapedResult.content);
-                            if (scrapedResult.content) {
-                                jsonResult.scraped[se.field] = scrapedResult.content;
-                            } else {
-                                se.errors = scrapedResult.errors;
-                                jsonResult.errors.push(se)
-                            }
-                        })
-                        .finally(function () {
-                            callback();
-                        })
-                }, function done() {
-                    resolve(jsonResult);
-                })
-            })
+            });
     })
-        .then(function (result) {
-            client.close();
-            return result;
-        })
-        .catch(function (result) {
-            return result;
-        })
-        .finally(function () {
-            if (crawlerTimeout) {
-                clearTimeout(crawlerTimeout);
-            }
+}
+
+function _endClient(client) {
+    return new Promise(function (resolve, reject) {
+        client.end(function () {
             logger.error("=====================    Close Client   ==================================")
+            resolve();
+        })
+    })
+}
+
+/**
+ * scrape all other information exclude stock meanwhile check whether
+ * filed is required base on stock info  , when it's required and can not get
+ * value ,will throw exception
+ * @param client
+ * @param infos  Array
+ * @param scrapedResult like {"stock":"in-stock"}
+ * @returns {Promise}
+ * @private
+ */
+function _extractInfo(client, infos, scrapedResult) {
+    scrapedResult.status = true;
+    return new Promise(function (resolve, reject) {
+        infos = infos.filter(function (item) {
+            return item.selectors && item.selectors.length > 0;
         });
+        var throeError = false;
+        async.until(function isDone() {
+            return infos.length === 0 || throeError;
+        }, function next(callback) {
+
+            try {
+                var info = infos.shift();
+                var required = info.requiredWhenStatusInclude.some(function (item) {
+                    return item === scrapedResult.stock;
+                });
+
+                _scrapeBySelectors(client, info.scrape, info.selectors)
+                    .then(function (scrapedR) {
+                        if (scrapedR.status) {
+                            scrapedResult[info.field] = scrapedR.content;
+                        } else {
+                            if (required) {
+                                throeError = true;
+                                scrapedResult.status = false;
+                                scrapedResult.errors = scrapedR.errors;
+                            }
+                        }
+                    })
+                    .catch(function (err) {
+                        logger.error(err);
+                    })
+                    .finally(function () {
+                        callback();
+                    })
+            } catch (e) {
+                throeError = true;
+                scrapedResult.status = false;
+                scrapedResult.errors = [e.message || e];
+                callback();
+            }
+
+
+        }, function done() {
+            resolve(scrapedResult);
+        });
+    })
+}
+
+/**
+ * extract stock info , must be able to find one valid status from
+ * stockConfig.statusList , otherwise will throw exception
+ * @param client
+ * @param stockConfig
+ * @returns {Promise}
+ * @private
+ */
+function _extractStock(client, stockConfig) {
+    var result = {};
+    logger.info("Scraping stock info");
+    return new Promise(function (resolve, reject) {
+        try {
+            var finished = false;
+            var statusList = stockConfig.statusList.filter(function (item) {
+                return item.selectors && item.selectors.length > 0
+            });
+            async.until(function isDone() {
+                return statusList.length === 0 || finished;
+            }, function next(callback) {
+                var statusConfig = statusList.shift();
+                _scrapeBySelectors(client, statusConfig.scrape, statusConfig.selectors)
+                    .then(function (statusScrapedData) {
+                        if (statusScrapedData.status) {
+                            result.status = true;
+                            result.content = statusConfig.status;
+                            finished = true;
+                        }
+                    })
+                    .catch(function (err) {
+                        logger.error("#_scrapeBySelectors() :", err);
+                        result.status = false;
+                        result.errors = [err.message || err];
+                        finished = true;
+                    })
+                    .finally(function () {
+                        callback()
+                    })
+            }, function done() {
+                //resolve(result)
+                if (result.status) {
+                    resolve(result.content);
+                } else {
+                    reject(result.errors);
+                }
+            })
+
+        } catch (err) {
+            result.status = false;
+            result.errors = [err.message || err];
+            reject(result);
+        }
+
+
+    });
+}
+
+/**
+ * scrape for specified filed with multiply selectors ,
+ * will forEach the selectors to scrape ,will break when find valid value or throw error
+ * @param client
+ * @param scrapeConfig
+ * @param selectors
+ * @returns {Promise}
+ * @private
+ */
+function _scrapeBySelectors(client, scrapeConfig, selectors) {
+    return new Promise(function (resolve, reject) {
+        var finished = false;
+        var selectorsLength = selectors.length;
+        var result = {};
+        var errors = [];
+        async.until(function isDone() {
+            return selectors.length === 0 || finished;
+        }, function next(callback) {
+            var selector = selectors.shift();
+            switch (scrapeConfig.type) {
+                case 'value' :
+                {
+                    client.getValue(selector, _handle);
+                    break;
+                }
+                case 'html':
+                {
+                    client.getHTML(selector, _handle);
+                    break;
+                }
+                case 'attribute':
+                {
+                    client.getAttribute(selector, scrapeConfig.attr, _handle);
+                    break;
+                }
+
+                case 'elementExist':
+                {
+                    client.isExisting(selector, _handle);
+                    break;
+                }
+                case 'textInclude':
+                {
+                    client.getText(selector, function (err, data) {
+                        logger.debug(data, scrapeConfig.keys)
+                        _handle(err, err ? false : _include(data, scrapeConfig.keys));
+                    });
+                    break;
+                }
+                default :
+                {
+                    client.getText(selector, _handle);
+                }
+            }
+
+
+            function _handle(err, data) {
+                //logger.debug("scraped content '%s' with selector '%s' on type '%s'", data, selector, scrapeType.type);
+                if (err) {
+                    errors.push(err.message || err);
+                    if (errors.length === selectorsLength) {
+                        logger.error(errors);
+                        result.status = false;
+                        result.errors = errors;
+                    }
+                } else {
+                    result.status = true;
+                    result.content = data;
+                    finished = true;
+                }
+                callback();
+            }
+        }, function done() {
+            resolve(result);
+        })
+    })
+}
+
+/**
+ * check whether resultStr contains any string from keys array
+ * @param resultStr String
+ * @param keys  Array
+ * @returns {*}
+ * @private
+ */
+function _include(resultStr, keys) {
+    if (resultStr && keys) {
+        resultStr = resultStr.toString().toLowerCase();
+        return keys.some(function (item) {
+            return item && resultStr.indexOf(item.toLowerCase()) !== -1;
+        })
+    } else {
+        return false;
+    }
 }
 
 /**
@@ -236,7 +515,7 @@ function _isValidBrowser(browser) {
 
 
 process.on("uncaughtException", function (err) {
-    logger.error("UncaughtException:", err);
+    logger.error("CrawlerInstance.js UncaughtException:", err);
 });
 
 module.exports = CrawlerInstance;

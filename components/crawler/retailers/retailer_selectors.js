@@ -7,55 +7,112 @@ module.exports = [
         "locale": "en_gb",
         "retailers": [
             {
-                "domain": "groceries.asda",
-                "id": "groceries.asda",
-                "selectors": [
-                    {
-                        "content": ['#itemDetails > div.add-holder.pharmRestricted-holder > p.prod-price > span.prod-price-inner'],
-                        "field": "price_now",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    },
-                    {
-                        "content": ["#itemDetails > h1"],
-                        "field": "name",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }
-                ]
-            }, {
-                "domain": "tesco.com",
                 "id": "groceries.tesco.com",
-                "selectors": [
-                    {
-                        "content": ['.descriptionDetails span.linePrice'],
-                        "field": "price_now",
-                        "scrapeType": {
-                            "type": "text"
-                        }
+                "domain": "tesco.com",
+                "config": {
+                    "detail": {
+                        "stock": {
+                            "required": true,
+                            "field": "stock",
+                            "statusList": [
+                                {
+                                    "status": "out-of-stock",
+                                    "order": 0,
+                                    "scrape": {
+                                        "type": "textInclude",
+                                        "keys": [
+                                            "not available"
+                                        ]
+                                    },
+                                    "selectors": [
+                                        " div.noStock div.descNotices p.unavailableMsg"
+                                    ]
+                                },
+                                {
+                                    "status": "in-stock",
+                                    "order": 1,
+                                    "selectors": [
+                                        ".descriptionDetails span.linePrice"
+                                    ],
+                                    "scrape": {
+                                        "type": "elementExist"
+                                    }
+                                },
+                                {
+                                    "status": "notfound",
+                                    "order": 2,
+                                    "selectors": [
+                                        "selector1"
+                                    ],
+                                    "scrape": {
+                                        "type": "textInclude",
+                                        "keys": []
+                                    }
+                                }
+                            ]
+                        },
+                        "info": [
+                            {
+                                "field": "price_now",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock"
+                                ],
+                                "selectors": [".descriptionDetails span.linePrice"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "price_was",
+                                "requiredWhenStatusInclude": [],
+                                "selectors": [],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "offer",
+                                "requiredWhenStatusInclude": [],
+                                "selectors": ["div.desc > div > div > div > a > em"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "title",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock",
+                                    "out-of-stock"
+                                ],
+                                "selectors": ["#breadcrumbNav  li:nth-child(3)"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "image",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock",
+                                    "out-of-stock"
+                                ],
+                                "selectors": ["div.presentationWrapper > div > a > img"],
+                                "scrape": {
+                                    "type": "attribute",
+                                    "attr": "src"
+                                }
+                            },
+                            {
+                                "field": "description",
+                                "requiredWhenStatusInclude": ["ul.descriptionSection"],
+                                "selectors": [],
+                                "scrape": {
+                                    "type": "html"
+                                }
+                            }
+                        ]
                     },
-                    {
-                        "content": ["div.desc > h1 > span"],
-                        "field": "name",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.noStock p.unavailableMsg"],
-                        "field": "stock",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.descriptionDetails > div.desc > div > div > div > a > em"],
-                        "field": "offer",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }
-                ]
+                    "search": {}
+                }
             }
             , {
                 "domain": "sainsburys.co.uk",

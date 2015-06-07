@@ -49,6 +49,7 @@
     "url": "https://github.com/dotterme/dotter-node-retailer-scripts/issues"
   },
   "devDependencies": {
-    "chai": "^2.3.0"
+    "chai": "^3.0.0",
+    "mocha": "^2.2.5"
   }
 }
