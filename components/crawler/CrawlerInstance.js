@@ -9,7 +9,7 @@ var fs = require("fs");
 var rp = require("request-promise");
 var _ = require("lodash");
 var webdriverIO = require('webdriverio');
-var SeleniumInstance = require("../seleniumInstance").get();
+var SeleniumInstance = require("../seleniumInstance");
 function CrawlerInstance(serverURL, type, port, hubPort) {
     this.server = serverURL;
     this.port = port;
@@ -28,9 +28,9 @@ function CrawlerInstance(serverURL, type, port, hubPort) {
 CrawlerInstance.prototype.request = function (job, retailerSelectorConfig, timeout) {
 
     if (job.method === "details") {
-        return extractDetails(job.productURL, retailerSelectorConfig.config.detail, retailerSelectorConfig.browser || job.browser, this, timeout);
+        return _scrape("details", job.productURL, retailerSelectorConfig.config.detail, retailerSelectorConfig.browser || job.browser, this, timeout);
     } else if (job.method === "links") {
-        return extractDetails(job.productURL, retailerSelectorConfig.config.search, retailerSelectorConfig.browser || job.browser, this);
+        return _scrape("links", job.productURL, retailerSelectorConfig.config.search, retailerSelectorConfig.browser || job.browser, this);
     }
     //return _scrape(job.productURL, selectorConfig.selectors, job.browser, this)
 }
@@ -40,10 +40,10 @@ CrawlerInstance.prototype.restart = function () {
     //return Promise.resolve();
     var crawlerInstance = this;
     //SeleniumInstance.port = crawlerInstance.hub;
-    return SeleniumInstance.registerNode(crawlerInstance.port, crawlerInstance.type, crawlerInstance.hub);
+    return SeleniumInstance.restartPhantom(crawlerInstance.port);
 }
 
-function extractDetails(productURL, selectorConfig, browser, crawlerInstance, timeout) {
+function _scrape(type, productURL, selectorConfig, browser, crawlerInstance, timeout) {
     var client = webdriverIO
         .remote({
             desiredCapabilities: {
@@ -77,33 +77,54 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
             })
             .then(function () {
                 logger.info("scraping product '%s'", productURL);
-                return _extractStock(client, selectorConfig.stock)
-                    .then(function (scrapedStock) {
-                        jsonResult.status = true;
-                        jsonResult.scraped.stock = scrapedStock;
-                        return _extractInfo(client, selectorConfig.info, jsonResult.scraped);
-                    })
-                    .then(function (scrapedInfo) {
-                        if (!scrapedInfo.status) {
-                            jsonResult.status = false;
-                            jsonResult.errors = scrapedInfo.errors;
-                        } else {
+                var promise = Promise.resolve();
+                if (type === "details") {
+                    promise = _extractStock(client, selectorConfig.stock)
+                        .then(function (scrapedStock) {
                             jsonResult.status = true;
-                            delete jsonResult.errors;
-                        }
-                        delete scrapedInfo.status;
-                        delete scrapedInfo.errors;
-                        jsonResult.scraped = scrapedInfo;
-                        jsonResult.scraped = scrapedInfo;
-                        return jsonResult;
-                    })
-                    .catch(function (errors) {
-                        logger.error("#_extractStock():", errors);
+                            jsonResult.scraped.stock = scrapedStock;
+                            return _extractInfo(client, selectorConfig.info, jsonResult.scraped);
+                        })
+                        .then(function (scrapedInfo) {
+                            if (!scrapedInfo.status) {
+                                jsonResult.status = false;
+                                jsonResult.errors = scrapedInfo.errors;
+                            } else {
+                                jsonResult.status = true;
+                                delete jsonResult.errors;
+                            }
+                            delete scrapedInfo.status;
+                            delete scrapedInfo.errors;
+                            jsonResult.scraped = scrapedInfo;
+                            return jsonResult;
+                        })
+                        .catch(function (errors) {
+                            logger.error("#_extractStock():", errors);
+                            jsonResult.status = false;
+                            jsonResult.errors = errors;
+                            return jsonResult;
+                        })
+                } else if (type === "links") {
+                    promise = _extractLinks(client, selectorConfig)
+                        .then(function (scrapedInfo) {
+                            if (!scrapedInfo.status) {
+                                jsonResult.status = false;
+                                jsonResult.errors = scrapedInfo.errors;
+                            } else {
+                                jsonResult.status = true;
+                            }
+                            jsonResult.scraped = scrapedInfo.scraped;
+                            return jsonResult;
+                        })
+                        .catch(function (errors) {
+                            logger.error("#_extractStock():", errors);
+                            jsonResult.status = false;
+                            jsonResult.errors = errors;
+                            return jsonResult;
+                        })
+                }
+                return promise;
 
-                        jsonResult.status = false;
-                        jsonResult.errors = errors;
-                        return jsonResult;
-                    })
             })
             .then(function (r) {
                 return _endClient(client)
@@ -116,7 +137,7 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
                 resolve(result || jsonResult);
             })
             .catch(function (errResult) {
-                logger.error("#extractDetails():", errResult.errors);
+                logger.error("#_scrape():", errResult.errors);
                 reject(errResult || jsonResult);
             })
             .finally(function () {
@@ -127,8 +148,148 @@ function extractDetails(productURL, selectorConfig, browser, crawlerInstance, ti
 
             });
     })
+}
 
+function _extractLinks(client, selectorConfig) {
+    logger.warn("scraping links")
+    return new Promise(function (resolve, reject) {
+        var finished = false;
+        var resultJSON = {};
+        var products = [];
+        async.until(function isDone() {
+            return finished;
+        }, function next(callback) {
+            _extractProductForLink(client, selectorConfig.info)
+                .then(function (scrapedResult) {
+                    if (scrapedResult && scrapedResult.status) {
+                        resultJSON.status = true;
+                        products = products.contact(scrapedResult.scraped);
+                        var pagination = selectorConfig.pagination;
+                        if (pagination && pagination.required) {
+                            return _pagination(client, pagination)
+                                .then(function (r) {
+                                    if (!r || !r.status) {
+                                        finished = true;
+                                    }
+                                })
+                        } else {
+                            finished = true;
+                        }
+                    } else {
+                        finished = true;
+                        resultJSON.status = false;
+                        resultJSON.errors = scrapedResult.errors;
+                    }
+                })
+                .catch(function (err) {
+                    resultJSON.status = false;
+                    resultJSON.errors = err.errors || [err.message || err];
+                })
+                .finally(function () {
+                    callback();
+                });
+        }, function done() {
+            resolve(resultJSON);
+        })
+    });
+}
 
+function _generateProduct(extractJSON) {
+    if (extractJSON && Object.keys(extractJSON).length > 0) {
+        var resultJSON = {};
+        var array = [];
+        var fields = Object.keys(extractJSON);
+        var baseSize = 0;
+        var valid = true;
+        fields.forEach(function (field) {
+            if (baseSize === 0) {
+                baseSize = extractJSON[field].length;
+            }
+            valid = valid && (baseSize === extractJSON[field].length);
+        });
+        if (!valid) {
+            resultJSON.status = false;
+            resultJSON.errors = ["when get product links , name and url don't math"];
+        } else {
+            for (var i = 0; i < extractJSON[fields[0]].length; i++) {
+                var t = {};
+                t[fields[0]] = extractJSON[fields[0]][i];
+                for (var j = 1; j < fields.length; j++) {
+                    t[fields[j]] = extractJSON[fields[j]][i];
+                }
+                array.push(t);
+            }
+            resultJSON.status = true;
+            resultJSON.result = array;
+        }
+    } else {
+        resultJSON.status = true;
+        resultJSON.result = [];
+    }
+
+    return resultJSON;
+}
+
+function _pagination(client, pageConfig) {
+    return new Promise(function (resolve, reject) {
+        var resultJSON = {};
+        if (pageConfig.type === "scroll") {
+            resultJSON.status = false;
+            resolve(resultJSON);
+        } else {//no scroll , will be click
+            client.click(pageConfig.button, function (err, data) {
+                if (err) {
+                    logger.error(err);
+                    resultJSON.status = false;//pagination button doesn't exist or has finished pagination
+                } else {
+                    resultJSON.status = true;
+                }
+                resolve(resultJSON);
+            });
+        }
+    });
+}
+
+function _extractProductForLink(client, infos1) {
+    var infos = _.cloneDeep(infos1);
+    return new Promise(function (resolve, reject) {
+        var breakDown = false;
+        var json = {};
+        var resultJSON = {};
+        async.until(function isDone() {
+            return infos.length === 0 || breakDown;
+        }, function next(callback) {
+            var infoC = infos.shift();
+            _scrapeBySelectors(client, infoC.scrape, infoC.selectors)
+                .then(function (resultContent) {
+                    if (resultContent && resultContent.status) {
+                        resultJSON.status = true;
+                        if (json[infoC.field]) {
+                            json[infoC.field] = [];
+                        }
+                        json[infoC.field] = resultContent.content;
+                    } else {
+                        breakDown = true;
+                        resultJSON.status = false;
+                        resultJSON.errors = err.errors;
+                    }
+                })
+                .catch(function (err) {
+                    resultJSON.status = false;
+                    resultJSON.errors = err.errors || [err.message || err];
+                })
+                .finally(function () {
+                    callback();
+                })
+        }, function done() {
+            if (resultJSON.status) {
+                var r = _generateProduct(json);
+                resultJSON.status = r.status;
+                resultJSON.scraped = r.result;
+            }
+            resolve(resultJSON);
+        })
+    });
 }
 
 /**

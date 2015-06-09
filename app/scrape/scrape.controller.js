@@ -16,10 +16,24 @@ var dotterUtil = require("../../components/utils/dotterUtil");
 //    ##"expiration": 0//default is 0, use the cache 0 hour ago,
 //    "browser":"phantomjs"// default is phantomjs , can choose chrome
 //}
-exports.scrape = function (req, res) {
+exports.details = function (req, res) {
     var body = req.body;
-    if (body && body.productURLs && body.locale) {
-        dispatcher.scrape("details", body.productURLs, body.locale, body.retailer, body.browser)
+    if (body && body.urls && body.locale) {
+        dispatcher.scrape("details", body.urls, body.locale, body.retailer, body.browser)
+            .then(function (re) {
+                res.json(re);
+            })
+            .catch(function (err) {
+                Error[500](req, res, err.message);
+            })
+    } else {
+        Error[400](req, res, "both productURL")
+    }
+}
+exports.links = function (req, res) {
+    var body = req.body;
+    if (body && body.urls && body.locale) {
+        dispatcher.scrape("links", body.urls, body.locale, body.retailer, body.browser)
             .then(function (re) {
                 res.json(re);
             })

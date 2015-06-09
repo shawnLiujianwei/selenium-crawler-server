@@ -10,12 +10,12 @@ var os = require("os");
 var path = require("path");
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 process.env.NODE_CONFIG_DIR = path.join(__dirname, "./config");
-var seleniumServerStartupFile = path.join(__dirname,"./components/seleniumInstance/startup.js");
+var phantomClusterStartupFile = path.join(__dirname, "./components/seleniumInstance/startup.js");
 
 
 function _killExisting() {
     var names = [
-        "seleniumHub",
+        "phantomCluster",
         "webCrawler"
     ];
     return Promise.map(names, function (name) {
@@ -31,8 +31,8 @@ function _killExisting() {
 function _setupCrawlerServer() {
     var command = [];
     command.push("pm2 start");
-    command.push(seleniumServerStartupFile);
-    command.push("--name=seleniumHub");
+    command.push(phantomClusterStartupFile);
+    command.push("--name=phantomCluster");
     if (process.env.NODE_ENV === "production") {
         command.push("--max-memory-restart");
         command.push(_getMaxMemory());

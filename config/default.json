@@ -18,16 +18,10 @@
     }
   },
   "listener": {
-    "port": 7001
+    "port": 8586
   },
-  "seleniumHub": {
-    "port": 4141,
-    "phantom": [
-      5100,
-      5101
-    ],
-    "chrome": [
-      6100
-    ]
-  }
+  "phantom": [
+    5100,
+    5101
+  ]
 }

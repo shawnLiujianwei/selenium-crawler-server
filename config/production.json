@@ -36,16 +36,10 @@
       "replaceConsole": true
     }
   },
-  "seleniumHub": {
-    "port": 4141,
-    "phantom": [
-      5100,
-      5101,
-      5102,
-      5103
-    ],
-    "chrome": [
-      6100
-    ]
-  }
+  "phantom": [
+    5100,
+    5101,
+    5102,
+    5103
+  ]
 }

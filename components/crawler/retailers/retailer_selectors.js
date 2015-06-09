@@ -95,10 +95,10 @@ module.exports = [
                                     "in-stock",
                                     "out-of-stock"
                                 ],
-                                "selectors": ["div.presentationWrapper > div > a > img"],
+                                "selectors": ["div.zoomImage > a"],
                                 "scrape": {
                                     "type": "attribute",
-                                    "attr": "src"
+                                    "attr": "href"
                                 }
                             },
                             {
@@ -111,7 +111,30 @@ module.exports = [
                             }
                         ]
                     },
-                    "search": {}
+                    "search": {
+                        "info": [
+                            {
+                                "field": "name",
+                                "selectors": ["ul.products.grid > li.product  span.image > img"],
+                                "scrape": {
+                                    "type": "attribute",
+                                    "attr": "title"
+                                }
+                            }, {
+                                "field": "url",
+                                "selectors": ["ul.products.grid > li.product  span.image > img"],
+                                "scrape": {
+                                    "type": "attribute",
+                                    "attr": "url"
+                                }
+                            }
+                        ],
+                        "pagination": {
+                            "required": true,
+                            "type": "click",
+                            "button": "#multipleAdd > div.bottom.controlsWrap.clearfix.hasSort > div.controlsBar > div.pagination > ul > li.nextWrap > p > a"
+                        }
+                    }
                 }
             }
             , {

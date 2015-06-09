@@ -78,7 +78,6 @@ ScrapeQueue.prototype.push = function (job) {
                     callback();
                 });
         }, function done() {
-            jobQueue.processing = false;
             logger.info("job queue '%s' is now empty", jobQueue.id);
         });
     }

@@ -299,10 +299,15 @@ RetailerObject.prototype.format = function (jsonObject) {
     newJ.updateTime = jsonObject.updateTime.toUTCString();
     newJ.time = jsonObject.updateTime;
     var scraped = jsonObject.scraped;
-    if (scraped && Object.keys(scraped).length > 0) {
-        for (var key in scraped) {
-            newJ[key] = scraped[key];
+    if (scraped && (Object.keys(scraped).length > 0 || scraped.length > 0)) {
+        if (!Array.isArray(scraped)) {
+            for (var key in scraped) {
+                newJ[key] = scraped[key];
+            }
+        } else {
+            newJ.links = scraped;
         }
+
     }
     if (!jsonObject.status && jsonObject.errors) {
         newJ.message = jsonObject.errors.toString();
