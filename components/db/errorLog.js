@@ -6,7 +6,7 @@ var logger = require("node-config-logger").getLogger("components/db/errorLog.js"
 var config = require("config");
 var settings = config.mongo;
 var Promise = require("bluebird");
-var db = require("mongo-bluebird").create({
+var db = require("mongo-promise-bluebird").create({
     db: settings.db,
     host: settings.host,
     port: settings.port
