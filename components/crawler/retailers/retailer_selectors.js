@@ -8,7 +8,7 @@ module.exports = [
         "retailers": [
             {
                 "id": "groceries.tesco.com",
-                "domain": "tesco.com",
+                "domain": "http://www.tesco.com",
                 "config": {
                     "detail": {
                         "stock": {
@@ -115,22 +115,21 @@ module.exports = [
                         "info": [
                             {
                                 "field": "name",
-                                "selectors": ["ul.products.grid > li.product  span.image > img"],
+                                "selectors": ["ul.products.grid > li.product >div.desc>h2>a"],
                                 "scrape": {
-                                    "type": "attribute",
-                                    "attr": "title"
+                                    "type": "text"
                                 }
                             }, {
                                 "field": "url",
-                                "selectors": ["ul.products.grid > li.product  span.image > img"],
+                                "selectors": ["ul.products.grid > li.product >div.desc>h2>a"],
                                 "scrape": {
                                     "type": "attribute",
-                                    "attr": "url"
+                                    "attr": "href"
                                 }
                             }
                         ],
                         "pagination": {
-                            "required": true,
+                            "required": false,
                             "type": "click",
                             "button": "#multipleAdd > div.bottom.controlsWrap.clearfix.hasSort > div.controlsBar > div.pagination > ul > li.nextWrap > p > a"
                         }

@@ -117,7 +117,7 @@ function _scrape(type, productURL, selectorConfig, browser, crawlerInstance, tim
                             return jsonResult;
                         })
                         .catch(function (errors) {
-                            logger.error("#_extractStock():", errors);
+                            logger.error("#_extractLinks():", errors);
                             jsonResult.status = false;
                             jsonResult.errors = errors;
                             return jsonResult;
@@ -163,16 +163,21 @@ function _extractLinks(client, selectorConfig) {
                 .then(function (scrapedResult) {
                     if (scrapedResult && scrapedResult.status) {
                         resultJSON.status = true;
-                        products = products.contact(scrapedResult.scraped);
+                        //products = products.contact(scrapedResult.scraped);
+                        Array.prototype.push.apply(products, scrapedResult.scraped);
                         var pagination = selectorConfig.pagination;
                         if (pagination && pagination.required) {
                             return _pagination(client, pagination)
                                 .then(function (r) {
                                     if (!r || !r.status) {
+                                        resultJSON.status = true;
+                                        resultJSON.scraped = products;
                                         finished = true;
                                     }
                                 })
                         } else {
+                            resultJSON.status = true;
+                            resultJSON.scraped = products;
                             finished = true;
                         }
                     } else {
@@ -182,6 +187,7 @@ function _extractLinks(client, selectorConfig) {
                     }
                 })
                 .catch(function (err) {
+                    logger.error(err);
                     resultJSON.status = false;
                     resultJSON.errors = err.errors || [err.message || err];
                 })
@@ -189,6 +195,7 @@ function _extractLinks(client, selectorConfig) {
                     callback();
                 });
         }, function done() {
+
             resolve(resultJSON);
         })
     });
@@ -250,7 +257,7 @@ function _pagination(client, pageConfig) {
     });
 }
 
-function _extractProductForLink(client, infos1) {
+function _extractProductForLink(client, infos1,domain) {
     var infos = _.cloneDeep(infos1);
     return new Promise(function (resolve, reject) {
         var breakDown = false;
