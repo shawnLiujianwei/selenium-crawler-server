@@ -137,98 +137,131 @@ module.exports = [
                 }
             }
             , {
-                "domain": "sainsburys.co.uk",
-                "id": "groceries.sainsburys.co.uk",
-                "selectors": [
-                    {
-                        "content": ['#content > div.section.productContent > div.mainProductInfoWrapper > div > div.productSummary > div.promotion > p > a'],
-                        "field": "price_now",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    },
-                    {
-                        "content": ["#content > div.section.productContent > div.mainProductInfoWrapper > div > div.productSummary > h1"],
-                        "field": "name",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.noStock p.unavailableMsg"],
-                        "field": "stock",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }
-                ]
-            }, {
-                "domain": "waitrose.com",
                 "id": "waitrose.com",
-                "selectors": [
-                    {
-                        "content": 'p.price > strong',
-                        "field": "price_now",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div > div.l-content > p.offer-container > a.oldPrice"],
-                        "field": "price_was",
-                        "scrapeType": {
-                            "type": "text"
-                        }
+                "domain": "http://www.waitrose.com",
+                "config": {
+                    "detail": {
+                        "stock": {
+                            "required": true,
+                            "field": "stock",
+                            "statusList": [
+                                {
+                                    "status": "in-stock",
+                                    "order": 1,
+                                    "selectors": [
+                                        "p.price > strong"
+                                    ],
+                                    "scrape": {
+                                        "type": "elementExist"
+                                    }
+                                },
+                                {
+                                    "status": "out-of-stock",
+                                    "order": 0,
+                                    "scrape": {
+                                        "type": "textInclude",
+                                        "keys": [
+                                            "not available"
+                                        ]
+                                    },
+                                    "selectors": [
+                                        " div.noStock div.descNotices p.unavailableMsg"
+                                    ]
+                                },
+                                {
+                                    "status": "notfound",
+                                    "order": 2,
+                                    "selectors": [],
+                                    "scrape": {
+                                        "type": "textInclude",
+                                        "keys": []
+                                    }
+                                }
+                            ]
+                        },
+                        "info": [
+                            {
+                                "field": "price_now",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock"
+                                ],
+                                "selectors": ["div.l-content > p.price > strong"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "price_was",
+                                "requiredWhenStatusInclude": [],
+                                "selectors": ["div > div.l-content > p.offer-container > a.oldPrice"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "offer",
+                                "requiredWhenStatusInclude": [],
+                                "selectors": ["div > div.l-content > p.offer-container > a.offer:nth-child(1)"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "title",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock",
+                                    "out-of-stock"
+                                ],
+                                "selectors": ["div.product-detail div > div.l-content > h1"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            },
+                            {
+                                "field": "image",
+                                "requiredWhenStatusInclude": [
+                                    "in-stock",
+                                    "out-of-stock"
+                                ],
+                                "selectors": ["div.zoomImage > a"],
+                                "scrape": {
+                                    "type": "attribute",
+                                    "attr": "href"
+                                }
+                            },
+                            {
+                                "field": "description",
+                                "requiredWhenStatusInclude": ["ul.descriptionSection"],
+                                "selectors": [],
+                                "scrape": {
+                                    "type": "html"
+                                }
+                            }
+                        ]
                     },
-                    {
-                        "content": ["div.l-content > h1 > em"],
-                        "field": "name",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div > div.l-content > p.offer-container > a.offer"],
-                        "field": "offer",
-                        "scrapeType": {
-                            "type": "text"
+                    "search": {
+                        "info": [
+                            {
+                                "field": "name",
+                                "selectors": ["div.products-grid div.m-product-cell div.m-product-details-container"],
+                                "scrape": {
+                                    "type": "text"
+                                }
+                            }, {
+                                "field": "url",
+                                "selectors": ["div.products-grid div.m-product-cell div.m-product-details-container > a"],
+                                "scrape": {
+                                    "type": "attribute",
+                                    "attr": "href"
+                                }
+                            }
+                        ],
+                        "pagination": {
+                            "required": false,
+                            "type": "scroll"
                         }
                     }
-                ]
-            }, {
-                "domain": "very.co.uk",
-                "id": "very.co.uk",
-                "selectors": [
-                    {
-                        "content": ['div.productPricingInformation > div.productPrice > div > div > div.productNowPrice > div > span'],
-                        "field": "price_now",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.productPricingInformation > div.productPrice > div > div > div.productWasPrice > div > span"],
-                        "field": "price_was",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    },
-                    {
-                        "content": ["#header > span > h1 > span"],
-                        "field": "name",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.productPricingInformation > div.productPrice > div > div > div.productSavePrice"],
-                        "field": "offer",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }, {
-                        "content": ["div.stockMessaging.inStock > span.indicator"],
-                        "field": "stock",
-                        "scrapeType": {
-                            "type": "text"
-                        }
-                    }
-                ]
+                }
             }
         ]
     }

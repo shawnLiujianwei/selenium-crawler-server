@@ -20,8 +20,11 @@
   "listener": {
     "port": 8586
   },
-  "phantom": [
-    5100,
-    5101
-  ]
+  "phantom": {
+    "ports": [
+      5100,
+      5101
+    ],
+    "timeout": 60000
+  }
 }

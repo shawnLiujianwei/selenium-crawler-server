@@ -10,6 +10,7 @@ var rp = require("request-promise");
 var _ = require("lodash");
 var webdriverIO = require('webdriverio');
 var SeleniumInstance = require("../seleniumInstance");
+var config = require("config")
 function CrawlerInstance(serverURL, type, port, hubPort) {
     this.server = serverURL;
     this.port = port;
@@ -20,7 +21,7 @@ function CrawlerInstance(serverURL, type, port, hubPort) {
     });
     this.type = type;
     this.hub = hubPort;
-    this.timeout = 120000;
+    this.timeout = config.phantom.timeout || 60000;
     this.restartTimes = 3;
 
 }
@@ -257,7 +258,7 @@ function _pagination(client, pageConfig) {
     });
 }
 
-function _extractProductForLink(client, infos1,domain) {
+function _extractProductForLink(client, infos1, domain) {
     var infos = _.cloneDeep(infos1);
     return new Promise(function (resolve, reject) {
         var breakDown = false;

@@ -1,7 +1,7 @@
 /**
  * Created by Shawn Liu on 15-6-7.
  */
-var phantomPorts = require("config").phantom;
+var phantomPorts = require("config").phantom.ports;
 var Promise = require("bluebird");
 var Process = require("child_process");
 var util = require("../utils/dotterUtil");

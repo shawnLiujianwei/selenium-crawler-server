@@ -1,7 +1,7 @@
 /**
  * Created by Shawn Liu on 2015/5/20.
  */
-var phantomInstancePorts = require("config").phantom;
+var phantomInstancePorts = require("config").phantom.ports;
 var Promise = require("bluebird");
 var host = "http://127.0.0.1";
 var BatchRequest = require("./BatchRequest");

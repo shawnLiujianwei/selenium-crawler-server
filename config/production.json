@@ -36,10 +36,13 @@
       "replaceConsole": true
     }
   },
-  "phantom": [
-    5100,
-    5101,
-    5102,
-    5103
-  ]
+  "phantom": {
+    "ports": [
+      5100,
+      5101,
+      5102,
+      5103
+    ],
+    "timeout": 30000
+  }
 }
