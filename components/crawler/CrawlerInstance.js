@@ -665,8 +665,8 @@ function _isValidBrowser(browser) {
 }
 
 
-process.on("uncaughtException", function (err) {
-    logger.error("CrawlerInstance.js UncaughtException:", err);
-});
+//process.on("uncaughtException", function (err) {
+//    logger.error("CrawlerInstance.js UncaughtException:", err);
+//});
 
 module.exports = CrawlerInstance;

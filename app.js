@@ -23,8 +23,8 @@ server.listen(config.listener.port, function () {
 });
 dispatcher.initAllInstance();
 
-// Expose app
-//module.exports = app;
-process.on("uncaugheException",function(err){
-    console.error(err);
-})
+//// Expose app
+////module.exports = app;
+//process.on("uncaugheException",function(err){
+//    console.error(err);
+//})

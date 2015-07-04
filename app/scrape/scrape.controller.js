@@ -5,7 +5,7 @@
 //var crawler = require("../../components/crawler");
 var Error = require("../../components/errors");
 var productService = require("../../components/db/product");
-var logger = require("node-config-logger").getLogger("app-webdriver/app/scrape/scrape.controller.js");
+var logger = require("node-config-logger").getLogger("app/scrape/scrape.controller.js");
 var Promise = require("bluebird");
 var dispatcher = require("../../components/crawler/dispatcher");
 var dotterUtil = require("../../components/utils/dotterUtil");
@@ -27,7 +27,7 @@ exports.details = function (req, res) {
                 Error[500](req, res, err.message);
             })
     } else {
-        Error[400](req, res, "both productURL")
+        Error[400](req, res, "both urls and locale are required");
     }
 }
 exports.links = function (req, res) {

@@ -9,8 +9,8 @@ var _ = require("lodash");
 function ScrapeQueue(crawlerInstance, options) {
     this.crawlerInstance = crawlerInstance;
     this.options = options || {
-        maxRetries: 1
-    };
+            maxRetries: 1
+        };
     this.processing = false;
     this.jobs = [];
     this.id = this.options.id || crawlerInstance.id || '?';
@@ -30,15 +30,16 @@ ScrapeQueue.prototype.push = function (job) {
             job.attempt = job.attempt || 1;
             var batch = job.batchRequest;
             job.batchRequest;
-            var retailerScript = new RetailerScript(job.productURL, job.locale, job.retailer);
+            //var retailerScript = new RetailerScript(job.productURL, job.locale, job.retailer);
             logger.info("job queue '%s' - scraping '%s' for batch request '%s'", jobQueue.id, job.productURL, batch.id);
-            retailerScript.getSelector()
-                .then(function (selectorConfig) {
+            RetailerScript.getSelector(job.productURL, job.locale, job.retailer)
+                .then(function (selectorConfig1) {
+                    var selectorConfig = selectorConfig1.data;
                     return jobQueue.crawlerInstance.request(job, selectorConfig)//TODO need add parameters here
                         .then(function (result) {
                             //batch.appendResults();//TODO need add results to batchRequest here
                             logger.info("job queue '%s' - scraped successfully '%s' for batch request '%s'", jobQueue.id, job.productURL, batch.id);
-                            return retailerScript.format(result);
+                            return RetailerScript.format(result);
                         })
                         .then(function (jsonResult) {
                             //batch.appendResults(jsonResult);
@@ -72,7 +73,13 @@ ScrapeQueue.prototype.push = function (job) {
                 })
                 .catch(function (err) {
                     //failed to get retailer selectors error;
-                    batch.appendResults(err);
+                    var json = {
+                        "status": false,
+                        "productURL": job.productURL,
+                        "errors": [err.message],
+                        "browser": job.browser || selectorConfig.browser
+                    }
+                    batch.appendResults(json);
                 })
                 .finally(function () {
                     callback();

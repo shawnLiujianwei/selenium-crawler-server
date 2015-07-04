@@ -27,8 +27,8 @@ describe("Test components/crawler/retailers/index.js", function () {
                 }
             ]
         };
-        var retailerScript = new RetailerObject(result.productURL, "en_gb");
-        retailerScript.format(result)
+        //var retailerScript = new RetailerObject(result.productURL, "en_gb");
+        RetailerObject.format(result)
             .then(function (t) {
                 console.log(t);
             })
@@ -41,8 +41,8 @@ describe("Test components/crawler/retailers/index.js", function () {
     });
     it.only("Get retailer config", function (done) {
         var url = "http://www.tesco.com/groceries/Product/Details/?id=273797773";
-        var retailerScript = new RetailerObject(url, "en_gb");
-        retailerScript.getSelector()
+        //var retailerScript = new RetailerObject(url, "en_gb");
+        RetailerObject.getSelector(url, "en_gb")
             .then(function (config) {
                 expect(config.id).equal("groceries.tesco.com")
             })
